@@ -1,3 +1,4 @@
+import sys
 from socket import *
 from threading import Thread
 
@@ -34,7 +35,9 @@ class Client:
         if cmd.type == 'message':
             print("{}: {}".format(cmd.creator, cmd.body))
         elif cmd.type == 'connect':
-            print("Connected")
+            print("{} Connected".format(cmd.creator))
+        elif cmd.type == 'disconnect':
+            print("{} Disconnected".format(cmd.creator))
     
     def parse_input(self):
         """
@@ -68,9 +71,13 @@ class Client:
         if cmd_name == '/message':
             cmd.init_send_message(cmd_body)
         elif cmd_name == '/quit':
-            pass # Requires implementation
+            cmd.init_disconnect()
+            sys.exit()
+        else:
+            print("\"{}\" is not a valid command.".format(cmd_name))
+            return
         
-        # Send the command to the server.
+        # Send the command to the server
         cmd.send(self.host_sock)
 
     def start(self):
@@ -82,10 +89,16 @@ class Client:
         self.host_sock.connect(self.host_address)
         Thread(target=self.listen).start()
 
+        # Prompt the user to provide an alias
+        alias = input("Please enter an alias: ")
+        while len(alias.strip()) <= 4:
+            print("An alias must be greater than four characters long.")
+            alias = input("Please enter an alias: ")
+
         # Send a connection request to the server
-        connect = Command()
-        connect.init_connect()
-        connect.send(self.host_sock)
+        cmd = Command()
+        cmd.init_connect(alias)
+        cmd.send(self.host_sock)
 
         # Continually parse input from the user
         while True:

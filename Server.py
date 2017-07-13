@@ -36,11 +36,14 @@ class Server:
         """
 
         while True:
-            data = client_sock.recv(1024)
-            if not data:
+            try:
+                data = client_sock.recv(1024)
+                cmd = Command(data)
+                self.execute_command(cmd, origin_address, client_sock)
+            except:
+                # Notify other users that the client has disconnected
+                print("Server exception thrown")
                 break
-            cmd = Command(data)
-            self.execute_command(cmd, origin_address, client_sock)
 
         client_sock.close()
 
@@ -59,10 +62,31 @@ class Server:
                 cmd.send(user_socket)
 
         elif cmd.type == 'connect':
-            alias = "{}({})".format(origin_address[0], origin_address[1])
-            print("{} connected".format(alias))
+            # Get the chosen alias and address
+            alias = cmd.body
+            address = "{}({})".format(origin_address[0], origin_address[1])
+
+            # Check that the alias isn't already in use
+            if alias in self.users.values():
+                # Send warning back to client
+                pass
+
+            # Show who connected and where their origin address is
+            print("{} connected with origin address: {}".format(alias, address))
+
             self.users[sock] = User(alias)
             cmd.send(sock)
+        
+        elif cmd.type == 'disconnect':
+            # Close the socket
+            sock.close()
+
+            # Show that the user disconnected
+            print("{} disconnected".format(self.users[sock].alias))
+
+            # Relays the message to all the other clients
+            for user_socket in self.users.keys():
+                cmd.send(user_socket)
 
 if __name__ == '__main__':
     server = Server()
