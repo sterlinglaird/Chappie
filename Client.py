@@ -80,7 +80,7 @@ class Client:
         # Send the command to the server
         cmd.send(self.host_sock)
 
-    def start(self):
+    def start(self, cmdline = False):
         """
         Starts the client by connecting to the server then awaits commands.
         """
@@ -100,10 +100,11 @@ class Client:
         cmd.init_connect(alias)
         cmd.send(self.host_sock)
 
-        # Continually parse input from the user
-        while True:
-            self.parse_input()
+        if cmdline:
+            # Continually parse input from the user
+            while True:
+                self.parse_input()
 
 if __name__ == '__main__':
     client = Client()
-    client.start()
+    client.start(True)
