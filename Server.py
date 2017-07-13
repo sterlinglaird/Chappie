@@ -1,60 +1,70 @@
 from socket import *
 from threading import Thread
+
+# Custom Modules
 from command import Command
 from user import User
 
-
 class Server:
     def __init__(self):
+        """
+        The class that contains server related functionality.
+        """
+
         self.listener = socket()
-        self.address = (gethostname(), 9999)
-        self.tcpBacklog = 5
+        self.address = (gethostname(), 8585)
+        self.tcp_backlog = 5
         self.users = {}
 
     def listen(self):
+        """
+        Listens for all new traffic and delegates a separate thread for each client.
+        """
 
         # Begins listening for a connection
         self.listener.bind(self.address)
-        self.listener.listen(self.tcpBacklog)
+        self.listener.listen(self.tcp_backlog)
 
         # Accepts all new traffic and delegates a thread to be responsible for the new client
         while True:
-            clientSock, originAddress = self.listener.accept()
-            Thread(target=self.handle_client, args=(originAddress, clientSock)).start()
+            client_sock, origin_address = self.listener.accept()
+            Thread(target=self.handle_client, args=(origin_address, client_sock)).start()
 
-    def handle_client(self, originAddress: (str, int), clientSock: socket):
+    def handle_client(self, origin_address: (str, int), client_sock: socket):
+        """
+        Handles all commands sent from the client.
+        """
 
-        # Handles all new traffic from the client
         while True:
-            data = clientSock.recv(1024)
+            data = client_sock.recv(1024)
             if not data:
                 break
             cmd = Command(data)
-            self.execute_command(cmd, originAddress, clientSock)
+            self.execute_command(cmd, origin_address, client_sock)
 
-        clientSock.close()
+        client_sock.close()
 
-    def execute_command(self, cmd: Command, originAddress: (str, int), sock: socket):
+    def execute_command(self, cmd: Command, origin_address: (str, int), sock: socket):
+        """
+        Executes a given command and performs an action depending on the command type.
+        """
 
-        # Performs the appropriate action depending on the command type
         if cmd.type == 'message':
-            cmd.createdBy = self.users[sock].alias  # Adds a tag that says who authored the message
-            print('{}: {}'.format(cmd.createdBy, cmd.body))
+            # Adds a tag that says who authored the message
+            cmd.creator = self.users[sock].alias
+            print('{}: {}'.format(cmd.creator, cmd.body))
 
             # Relays the message to all the other clients
-            for user in self.users.keys():
-                cmd.send(user)
+            for user_socket in self.users.keys():
+                cmd.send(user_socket)
 
         elif cmd.type == 'connect':
-            alias = '{}({})'.format(originAddress[0], originAddress[1])
-            print('{} connected'.format(alias))
+            alias = "{}({})".format(origin_address[0], origin_address[1])
+            print("{} connected".format(alias))
             self.users[sock] = User(alias)
             cmd.send(sock)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     server = Server()
-
-    print('Starting Server')
+    print("Starting Server")
     server.listen()
-
-
