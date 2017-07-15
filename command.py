@@ -13,18 +13,21 @@ class Command:
             self.type = data['type']
             self.body = data['body']
             self.creator = data['creator']
+            self.specificChatroom = data['specificChatroom']
         else:
             self.type = None
             self.body = None
             self.creator = None
+            self.specificChatroom = None
 
-    def init_send_message(self, message: str):
+    def init_send_message(self, message: str, specificChatroom: str):
         """
         Initializes the message command.
         """
 
         self.type = 'message'
         self.body = message
+        self.specificChatroom = specificChatroom
 
     def init_connect(self, alias: str):
         """
@@ -33,7 +36,7 @@ class Command:
 
         self.type = 'connect'
         self.body = alias
-    
+
     def init_disconnect(self):
         """
         Initializes the disconnect command.
@@ -42,10 +45,34 @@ class Command:
         self.type = 'disconnect'
         self.body = None
 
+    def init_join_chatroom(self, chatroom: str):
+        """
+        Initializes the join chatroom command.
+        """
+
+        self.type = 'join_chatroom'
+        self.body = chatroom
+
+    def init_create_chatroom(self, chatroom: str):
+        """
+        Initializes the create chatroom command.
+        """
+
+        self.type = 'create_chatroom'
+        self.body = chatroom
+
+    def init_delete_chatroom(self, chatroom: str):
+        """
+        Initializes the delete chatroom command.
+        """
+
+        self.type = 'delete_chatroom'
+        self.body = chatroom
+
     def send(self, sock: socket):
         """
         Sends the command using the provided socket.
         """
 
-        data = json.dumps({'type': self.type, 'creator': self.creator, 'body': self.body})
+        data = json.dumps({'type': self.type, 'creator': self.creator, 'specificChatroom': self.specificChatroom, 'body': self.body})
         sock.send(data.encode(encoding='UTF-8'))
