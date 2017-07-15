@@ -4,6 +4,7 @@ from threading import Thread
 
 # Custom Modules
 from command import Command
+from user import User
 
 class Client:
     def __init__(self):
@@ -16,6 +17,7 @@ class Client:
         self.host_address = (gethostname(), 8585)
         self.tcp_backlog = 5
         self.host_sock = socket()
+        self.user = None
 
     def listen(self):
         """
@@ -95,10 +97,11 @@ class Client:
             print("An alias must be greater than four characters long.")
             alias = input("Please enter an alias: ")
 
-        # Send a connection request to the server
+        # Send a connection request to the server and sets the current user
         cmd = Command()
         cmd.init_connect(alias)
         cmd.send(self.host_sock)
+        self.user = User(alias)
 
         if cmdline:
             # Continually parse input from the user

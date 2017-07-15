@@ -75,7 +75,11 @@ class Server:
             print("{} connected with origin address: {}".format(alias, address))
 
             self.users[sock] = User(alias)
-            cmd.send(sock)
+            cmd.creator = self.users[sock].alias
+
+            # let all users know about the connection
+            for user_socket in self.users.keys():
+                cmd.send(user_socket)
         
         elif cmd.type == 'disconnect':
             # Close the socket
