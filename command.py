@@ -26,7 +26,7 @@ class Command:
         self.type = 'message'
         self.body = message
 
-    def init_connect(self, alias : str):
+    def init_connect(self, alias: str):
         """
         Initializes the connect command.
         """
