@@ -1,10 +1,9 @@
-import sys
 from socket import *
 from threading import Thread
 
 # Custom Modules
 from command import Command
-from user import User
+import util
 
 class Client:
     def __init__(self):
@@ -17,7 +16,8 @@ class Client:
         self.host_address = (gethostname(), 8585)
         self.tcp_backlog = 5
         self.host_sock = socket()
-        self.user = None
+        self.username = None
+        self.chatroom = None
 
     def listen(self):
         """
@@ -37,9 +37,19 @@ class Client:
         if cmd.type == 'message':
             print("{}: {}".format(cmd.creator, cmd.body))
         elif cmd.type == 'connect':
-            print("{} Connected".format(cmd.creator))
+            if cmd.creator == self.username:
+                self.chatroom = util.defaultChatroom
+            print("{} connected".format(cmd.creator))
         elif cmd.type == 'disconnect':
-            print("{} Disconnected".format(cmd.creator))
+            print("{} disconnected".format(cmd.creator))
+        elif cmd.type == 'join_chatroom':
+            if cmd.creator == self.username:
+                self.chatroom = cmd.body
+            print("{} joined chatroom {}".format(cmd.creator, cmd.body))
+        elif cmd.type == 'create_chatroom':
+            print("{} created chatroom {}".format(cmd.creator, cmd.body))
+        elif cmd.type == 'delete_chatroom':
+            print("{} deleted chatroom {}".format(cmd.creator, cmd.body))
     
     def parse_input(self):
         """
@@ -61,7 +71,7 @@ class Client:
         if lst_parsed_input == 0:
             print("You must enter a command.")
             return
-        
+
         cmd_name = lst_parsed_input[0]
         cmd_body = ''
         for i in range(1, len(lst_parsed_input)):
@@ -71,10 +81,16 @@ class Client:
                 cmd_body = '{} {}'.format(cmd_body, lst_parsed_input[i])
 
         if cmd_name == '/message':
-            cmd.init_send_message(cmd_body)
+            cmd.init_send_message(cmd_body, self.chatroom)
         elif cmd_name == '/quit':
             cmd.init_disconnect()
             sys.exit()
+        elif cmd_name == '/join':
+            cmd.init_join_chatroom(cmd_body)
+        elif cmd_name == '/create':
+            cmd.init_create_chatroom(cmd_body)
+        elif cmd_name == '/delete':
+            cmd.init_delete_chatroom(cmd_body)
         else:
             print("\"{}\" is not a valid command.".format(cmd_name))
             return
@@ -82,7 +98,7 @@ class Client:
         # Send the command to the server
         cmd.send(self.host_sock)
 
-    def start(self, cmdline = False):
+    def start(self, cmdline=False):
         """
         Starts the client by connecting to the server then awaits commands.
         """
@@ -101,7 +117,8 @@ class Client:
         cmd = Command()
         cmd.init_connect(alias)
         cmd.send(self.host_sock)
-        self.user = User(alias)
+
+        self.username = alias
 
         if cmdline:
             # Continually parse input from the user

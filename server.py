@@ -4,6 +4,8 @@ from threading import Thread
 # Custom Modules
 from command import Command
 from user import User
+from chatroom import Chatroom
+import util
 
 class Server:
     def __init__(self):
@@ -15,6 +17,7 @@ class Server:
         self.address = (gethostname(), 8585)
         self.tcp_backlog = 5
         self.users = {}
+        self.chatrooms = {"Default": Chatroom("Default", None, True)}
 
     def listen(self):
         """
@@ -36,14 +39,9 @@ class Server:
         """
 
         while True:
-            try:
-                data = client_sock.recv(1024)
-                cmd = Command(data)
-                self.execute_command(cmd, origin_address, client_sock)
-            except:
-                # Notify other users that the client has disconnected
-                print("Server exception thrown")
-                break
+            data = client_sock.recv(1024)
+            cmd = Command(data)
+            self.execute_command(cmd, origin_address, client_sock)
 
         client_sock.close()
 
@@ -52,14 +50,17 @@ class Server:
         Executes a given command and performs an action depending on the command type.
         """
 
-        if cmd.type == 'message':
-            # Adds a tag that says who authored the message
-            cmd.creator = self.users[sock].alias
-            print('{}: {}'.format(cmd.creator, cmd.body))
+        currUser = self.users.get(sock, None)
 
-            # Relays the message to all the other clients
-            for user_socket in self.users.keys():
-                cmd.send(user_socket)
+        if cmd.type == 'message':
+            # Adds a tag that says who authored the command
+            cmd.creator = currUser.alias
+
+            print('{}/{}: {}'.format(cmd.creator, cmd.specificChatroom, cmd.body))
+
+            # Relays the message to all the other clients in the same chatroom that the message was sent from
+            for user in self.chatrooms[cmd.specificChatroom].users.values():
+                cmd.send(user.socket)
 
         elif cmd.type == 'connect':
             # Get the chosen alias and address
@@ -71,26 +72,88 @@ class Server:
                 # Send warning back to client
                 pass
 
-            # Show who connected and where their origin address is
+            # Update the server data and the command
+            newUser = User(alias, sock)
+            self.users[sock] = newUser
+            self.chatrooms[util.defaultChatroom].add_user(newUser)
+            cmd.creator = newUser.alias
+            cmd.specificChatroom = util.defaultChatroom
+
             print("{} connected with origin address: {}".format(alias, address))
 
-            self.users[sock] = User(alias)
-            cmd.creator = self.users[sock].alias
-
-            # let all users know about the connection
-            for user_socket in self.users.keys():
-                cmd.send(user_socket)
+            # let all users in default chatroom know about the connection
+            for user in self.chatrooms[util.defaultChatroom].users.values():
+                cmd.send(user.socket)
         
         elif cmd.type == 'disconnect':
             # Close the socket
             sock.close()
 
-            # Show that the user disconnected
-            print("{} disconnected".format(self.users[sock].alias))
+            connectedChatrooms = []
 
-            # Relays the message to all the other clients
-            for user_socket in self.users.keys():
+            # Remove the user
+            self.users.pop(sock)
+            for chatroom in self.chatrooms.values():
+                chatroom.rem_user(currUser.alias)
+                connectedChatrooms.append(chatroom.name)
+
+            # Adds a tag that says who authored the command
+            cmd.creator = currUser.alias
+
+            print("{} disconnected".format(currUser.alias))
+
+            # Relays the message to all the other clients in the same chatrooms as the user who disconnected
+            for chatroom in connectedChatrooms:
+                for user in self.chatrooms[chatroom].users:
+                    cmd.send(user.socket)
+
+        elif cmd.type == 'join_chatroom':
+            # Remove user from previous chatroom
+            for chatroom in self.chatrooms.values():
+                chatroom.rem_user(currUser)
+
+            # Add user to chatroom
+            self.chatrooms[cmd.body].add_user(currUser)
+
+            print("{} joined chatroom {}".format(currUser.alias, cmd.body))
+
+            # Adds a tag that says who authored the command
+            cmd.creator = currUser.alias
+
+            # Notify users in chatroom that user has joined
+            for user in self.chatrooms[cmd.body].users.values():
+                cmd.send(user.socket)
+
+        elif cmd.type == 'create_chatroom':
+
+            # Create chatroom if it doesnt already exist, if it does then let user know
+            if cmd.body in self.chatrooms:
+                # TODO
+                pass
+            else:
+                self.chatrooms[cmd.body] = Chatroom(cmd.body, currUser)
+
+            print("{} created chatroom {}".format(currUser.alias, cmd.body))
+
+            # Adds a tag that says who authored the command
+            cmd.creator = currUser.alias
+
+            # Let all users know about the new chatroom
+            for user_socket in self.users:
                 cmd.send(user_socket)
+
+        elif cmd.type == 'delete_chatroom':
+            self.chatrooms.pop(cmd.body, None)
+
+            # Adds a tag that says who authored the command
+            cmd.creator = currUser.alias
+
+            # Let all users know about the new chatroom
+            for user_socket in self.users:
+                cmd.send(user_socket)
+
+            print("{} deleted chatroom {}".format(currUser.alias, cmd.body))
+
 
 if __name__ == '__main__':
     server = Server()
