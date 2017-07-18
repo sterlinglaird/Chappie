@@ -56,6 +56,13 @@ class Server:
             # Adds a tag that says who authored the command
             cmd.creator = currUser.alias
 
+            # Notifies user if chatroom doesnt exist
+            if cmd.specificChatroom not in self.chatrooms:
+                errorResponse = Command()
+                errorResponse.init_error("Chatroom {} doesnt exist.".format(cmd.specificChatroom))
+                errorResponse.send(sock)
+                return
+
             print('{}/{}: {}'.format(cmd.creator, cmd.specificChatroom, cmd.body))
 
             # Relays the message to all the other clients in the same chatroom that the message was sent from
@@ -70,6 +77,7 @@ class Server:
             # Check that the alias isn't already in use
             if alias in self.users.values():
                 # Send warning back to client
+                # TODO
                 pass
 
             # Update the server data and the command
@@ -108,12 +116,20 @@ class Server:
                     cmd.send(user.socket)
 
         elif cmd.type == 'join_chatroom':
+            chatroom = self.chatrooms.get(cmd.body, None)
+
+            if chatroom is None:
+                errorResponse = Command()
+                errorResponse.init_error("Chatroom '{}' doesn't exist.".format(cmd.body))
+                errorResponse.send(sock)
+                return
+
             # Remove user from previous chatroom
             for chatroom in self.chatrooms.values():
                 chatroom.rem_user(currUser)
 
             # Add user to chatroom
-            self.chatrooms[cmd.body].add_user(currUser)
+            chatroom.add_user(currUser)
 
             print("{} joined chatroom {}".format(currUser.alias, cmd.body))
 
@@ -125,11 +141,12 @@ class Server:
                 cmd.send(user.socket)
 
         elif cmd.type == 'create_chatroom':
-
             # Create chatroom if it doesnt already exist, if it does then let user know
             if cmd.body in self.chatrooms:
-                # TODO
-                pass
+                errorResponse = Command()
+                errorResponse.init_error("Chatroom '{}' already exists.".format(cmd.body))
+                errorResponse.send(sock)
+                return
             else:
                 self.chatrooms[cmd.body] = Chatroom(cmd.body, currUser)
 
@@ -143,14 +160,44 @@ class Server:
                 cmd.send(user_socket)
 
         elif cmd.type == 'delete_chatroom':
+            chatroom = self.chatrooms.get(cmd.body, None)
+
+            if chatroom is None:
+                # Send error if chatroom doesnt exist
+                errorResponse = Command()
+                errorResponse.init_error("Chatroom '{}' doesn't exist.".format(cmd.body))
+                errorResponse.send(sock)
+                return
+            elif chatroom.owner is not currUser:
+                # Send error if user doesnt own the chatroom
+                errorResponse = Command()
+                errorResponse.init_error("Chatroom {} is not owned by you so you cannot delete it.".format(chatroom.name))
+                errorResponse.send(sock)
+                return
+
+            # Move all current users in chatroom to default room
+            userList = list(chatroom.users.values())
+            for user in userList:
+                chatroom.rem_user(user)
+                self.chatrooms[util.defaultChatroom].add_user(user)
+
             self.chatrooms.pop(cmd.body, None)
 
             # Adds a tag that says who authored the command
             cmd.creator = currUser.alias
 
-            # Let all users know about the new chatroom
+            # Let all users know about the deleted chatroom
             for user_socket in self.users:
                 cmd.send(user_socket)
+
+            # Let all users know about the joins to default chatroom
+            for deletedUser in userList:
+                joinCmd = Command()
+                joinCmd.init_join_chatroom(util.defaultChatroom)
+                joinCmd.creator = deletedUser.alias
+
+                for user_socket in self.chatrooms[util.defaultChatroom].users.values():
+                    joinCmd.send(user_socket.socket)
 
             print("{} deleted chatroom {}".format(currUser.alias, cmd.body))
 

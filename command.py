@@ -69,6 +69,14 @@ class Command:
         self.type = 'delete_chatroom'
         self.body = chatroom
 
+    def init_error(self, message):
+        """
+        Initializes the delete chatroom command.
+        """
+
+        self.type = 'error'
+        self.body = message
+
     def send(self, sock: socket):
         """
         Sends the command using the provided socket.

@@ -50,6 +50,8 @@ class Client:
             print("{} created chatroom {}".format(cmd.creator, cmd.body))
         elif cmd.type == 'delete_chatroom':
             print("{} deleted chatroom {}".format(cmd.creator, cmd.body))
+        elif cmd.type == 'error':
+            print("Error: {}".format(cmd.body))
     
     def parse_input(self):
         """
