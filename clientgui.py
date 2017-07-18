@@ -1,16 +1,14 @@
 import tkinter as tk
 import tkinter.font as tkFont
-
-# Custom Modules
-from client import Client
+from threading import Thread
+from subprocess import Popen, PIPE
 
 class ClientGUI(tk.Frame):
-    def __init__(self, client):
+    def __init__(self, client: Popen):
         """
         Initialize the client GUI.
         """
 
-        # Assign the client
         self.client = client
 
         # Initialize Tkinter GUI
@@ -26,7 +24,6 @@ class ClientGUI(tk.Frame):
 
         # User List
         self.initialize_users()
-
 
     def initialize_window(self):
         """
@@ -112,9 +109,12 @@ class ClientGUI(tk.Frame):
         # Send Message Box
         self.txt_send_message = tk.Text(self.frm_messages, height=1, width=64, font=self.default_font, pady=2)
         self.txt_send_message.grid(row=1, column=0, sticky=tk.W)
+        self.txt_send_message.bind('<Return>', self.txt_send_message_return)
 
         # Send Message Button
-        self.btn_send_message = tk.Button(self.frm_messages, text="Send", command=None, font=self.default_font)
+        self.btn_send_message = tk.Button(self.frm_messages, text="Send",
+                                          command=self.btn_send_message_click,
+                                          font=self.default_font)
         self.btn_send_message.grid(row=1, column=1, sticky=tk.W)
 
     def initialize_users(self):
@@ -139,12 +139,42 @@ class ClientGUI(tk.Frame):
         for user in ["Matt", "Sterling", "Spencer", "Rabjot"]:
             self.lst_box_users.insert(tk.END, user)
 
+    def txt_send_message_return(self, event):
+        self.btn_send_message_click()
+        return 'break'
+
+    def btn_send_message_click(self):
+        self.send_to_client("", self.txt_send_message.get('1.0', '1.end'))
+        self.txt_send_message.delete('1.0', 'end')
+
+    def send_to_client(self, prefix: str, body: str):
+        """
+        Sends data back to the client process
+        """
+
+        client.stdin.write("{} {}\n".format(prefix, body).encode())
+        client.stdin.flush()
+        print(self.txt_send_message.get('1.0', '1.end'))
+
+    def handle_data(self):
+        """
+        Handles data from the client process's stdout
+        """
+
+        while True:
+            line = client.stdout.readline()
+            application.txt_messages.insert('end', line)
 
 if __name__ == '__main__':
-    # Intialize the client
-    client = Client()
-    client.start()
+    # Start the client
+    client = Popen(['python', 'client.py'], stdout=PIPE, stdin=PIPE, stderr=PIPE, shell=False)
 
     # Initilize the GUI
     application = ClientGUI(client)
+
+    # Start the thread which handles new data from the client
+    clientHandler = Thread(target=application.handle_data)
+    clientHandler.start()
+
+    # Start the GUI mainloop
     application.mainloop()

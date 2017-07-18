@@ -69,18 +69,13 @@ class Client:
         # /[command_name] [command_body]
         # ie. /message Hello World!
 
-        lst_parsed_input = raw_input.split(' ')
+        lst_parsed_input = raw_input.split(' ', 1)
         if lst_parsed_input == 0:
             print("You must enter a command.")
             return
 
         cmd_name = lst_parsed_input[0]
-        cmd_body = ''
-        for i in range(1, len(lst_parsed_input)):
-            if i == 1:
-                cmd_body = lst_parsed_input[i]
-            else:
-                cmd_body = '{} {}'.format(cmd_body, lst_parsed_input[i])
+        cmd_body = lst_parsed_input[1]
 
         if cmd_name == '/message':
             cmd.init_send_message(cmd_body, self.chatroom)
@@ -109,8 +104,10 @@ class Client:
         self.host_sock.connect(self.host_address)
         Thread(target=self.listen).start()
 
-        # Prompt the user to provide an alias
-        alias = input("Please enter an alias: ")
+        # Prompt the user to provide an alias. Seperate so that the first message gets sent as a full line which will be picked up by the client gui
+        print("Please enter an alias: ")
+        alias = input()
+
         while len(alias.strip()) <= 4:
             print("An alias must be greater than four characters long.")
             alias = input("Please enter an alias: ")
