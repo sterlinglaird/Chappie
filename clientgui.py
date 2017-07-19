@@ -140,19 +140,27 @@ class ClientGUI(tk.Frame):
             self.lst_box_users.insert(tk.END, user)
 
     def txt_send_message_return(self, event):
+        """
+        Handles event of a return being entered to the message box.
+        """
+
         self.btn_send_message_click()
-        return 'break'
+        return 'break'  # Stops the <Return> event from updating the text box with a newline
 
     def btn_send_message_click(self):
-        self.send_to_client("", self.txt_send_message.get('1.0', '1.end'))
-        self.txt_send_message.delete('1.0', 'end')
+        """
+        Handles a click on the send message button
+        """
 
-    def send_to_client(self, prefix: str, body: str):
+        self.send_to_client(self.txt_send_message.get('1.0', '1.end'))
+        self.txt_send_message.delete('1.0', '1.end')
+
+    def send_to_client(self, body: str):
         """
         Sends data back to the client process
         """
 
-        client.stdin.write("{} {}\n".format(prefix, body).encode())
+        client.stdin.write("{}\n".format(body).encode())
         client.stdin.flush()
         print(self.txt_send_message.get('1.0', '1.end'))
 
