@@ -39,10 +39,16 @@ class Server:
         """
 
         while True:
-            data = client_sock.recv(1024)
+            try:
+                data = client_sock.recv(1024)
+            except:
+                break
+
             cmd = Command(data)
             self.execute_command(cmd, origin_address, client_sock)
 
+        print("{} lost connection".format(self.users[client_sock].alias))
+        self.users.pop(client_sock, None)
         client_sock.close()
 
     def execute_command(self, cmd: Command, origin_address: (str, int), sock: socket):
@@ -66,8 +72,7 @@ class Server:
             print('{}/{}: {}'.format(cmd.creator, cmd.specificChatroom, cmd.body))
 
             # Relays the message to all the other clients in the same chatroom that the message was sent from
-            for user in self.chatrooms[cmd.specificChatroom].users.values():
-                cmd.send(user.socket)
+            self.chatrooms[cmd.specificChatroom].send_all(cmd)
 
         elif cmd.type == 'connect':
             # Get the chosen alias and address
@@ -90,8 +95,7 @@ class Server:
             print("{} connected with origin address: {}".format(alias, address))
 
             # let all users in default chatroom know about the connection
-            for user in self.chatrooms[util.defaultChatroom].users.values():
-                cmd.send(user.socket)
+            self.chatrooms[cmd.specificChatroom].send_all(cmd)
         
         elif cmd.type == 'disconnect':
             # Close the socket
@@ -112,8 +116,7 @@ class Server:
 
             # Relays the message to all the other clients in the same chatrooms as the user who disconnected
             for chatroom in connectedChatrooms:
-                for user in self.chatrooms[chatroom].users:
-                    cmd.send(user.socket)
+                chatroom.send_all(cmd)
 
         elif cmd.type == 'join_chatroom':
             chatroom = self.chatrooms.get(cmd.body, None)
@@ -137,8 +140,7 @@ class Server:
             cmd.creator = currUser.alias
 
             # Notify users in chatroom that user has joined
-            for user in self.chatrooms[cmd.body].users.values():
-                cmd.send(user.socket)
+            self.chatrooms[cmd.body].send_all(cmd)
 
         elif cmd.type == 'create_chatroom':
             # Create chatroom if it doesnt already exist, if it does then let user know
@@ -156,8 +158,7 @@ class Server:
             cmd.creator = currUser.alias
 
             # Let all users know about the new chatroom
-            for user_socket in self.users:
-                cmd.send(user_socket)
+            self.send_all(cmd)
 
         elif cmd.type == 'delete_chatroom':
             chatroom = self.chatrooms.get(cmd.body, None)
@@ -187,8 +188,7 @@ class Server:
             cmd.creator = currUser.alias
 
             # Let all users know about the deleted chatroom
-            for user_socket in self.users:
-                cmd.send(user_socket)
+            self.send_all(cmd)
 
             # Let all users know about the joins to default chatroom
             for deletedUser in userList:
@@ -201,6 +201,13 @@ class Server:
 
             print("{} deleted chatroom {}".format(currUser.alias, cmd.body))
 
+    def send_all(self, cmd: Command):
+        for user_socket in list(self.users):
+            try:
+                cmd.send(user_socket)
+            except:
+                print("{} lost connection".format(self.users[user_socket].alias))
+                self.users.pop(user_socket, None)
 
 if __name__ == '__main__':
     server = Server()
