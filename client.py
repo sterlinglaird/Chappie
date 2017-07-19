@@ -74,8 +74,8 @@ class Client:
             print("You must enter a command.")
             return
 
-        cmd_name = lst_parsed_input[0]
-        cmd_body = lst_parsed_input[1]
+        cmd_name = lst_parsed_input[0] if len(lst_parsed_input) >= 1 else ''
+        cmd_body = lst_parsed_input[1] if len(lst_parsed_input) >= 2 else ''
 
         if cmd_name == '/message':
             cmd.init_send_message(cmd_body, self.chatroom)
