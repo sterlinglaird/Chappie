@@ -1,5 +1,6 @@
 from socket import *
 from threading import Thread
+import sys
 
 # Custom Modules
 from command import Command
@@ -52,7 +53,9 @@ class Client:
             print("{} deleted chatroom {}".format(cmd.creator, cmd.body))
         elif cmd.type == 'error':
             print("Error: {}".format(cmd.body))
-    
+
+        sys.stdout.flush()
+
     def parse_input(self):
         """
         Parses input sent by the client.
@@ -110,7 +113,8 @@ class Client:
 
         while len(alias.strip()) <= 4:
             print("An alias must be greater than four characters long.")
-            alias = input("Please enter an alias: ")
+            print("Please enter an alias: ")
+            alias = input()
 
         # Send a connection request to the server and sets the current user
         cmd = Command()

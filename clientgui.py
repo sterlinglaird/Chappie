@@ -162,7 +162,7 @@ class ClientGUI(tk.Frame):
 
         client.stdin.write("{}\n".format(body).encode())
         client.stdin.flush()
-        print(self.txt_send_message.get('1.0', '1.end'))
+        print('Sending: ' + body)
 
     def handle_data(self):
         """
@@ -171,6 +171,7 @@ class ClientGUI(tk.Frame):
 
         while True:
             line = client.stdout.readline()
+            print('Recieving: ' + line.decode("utf-8").strip())
             application.txt_messages.insert('end', line)
 
 if __name__ == '__main__':
