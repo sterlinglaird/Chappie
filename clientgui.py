@@ -238,7 +238,7 @@ class ClientGUI(tk.Frame):
 
         while True:
             line = client.stdout.readline()
-            print('Receiving: ' + line.decode("utf-8").stip())
+            print('Receiving: ' + line.decode("utf-8").strip())
             self.insert_text(line)
 
 if __name__ == '__main__':
