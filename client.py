@@ -111,10 +111,9 @@ class Client:
         print("Please enter an alias: ")
         alias = input()
 
-        while len(alias.strip()) <= 4:
-            print("An alias must be greater than four characters long.")
-            print("Please enter an alias: ")
-            alias = input()
+        while len(alias.strip()) <= 3:
+            print("An alias must be greater than three characters long.")
+            alias = input("Please enter an alias: ")
 
         # Send a connection request to the server and sets the current user
         cmd = Command()
