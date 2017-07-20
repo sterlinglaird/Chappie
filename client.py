@@ -1,5 +1,6 @@
 from socket import *
 from threading import Thread
+import sys
 
 # Custom Modules
 from command import Command
@@ -52,6 +53,8 @@ class Client:
             print("{} deleted chatroom {}".format(cmd.creator, cmd.body))
         elif cmd.type == 'error':
             print("Error: {}".format(cmd.body))
+
+        sys.stdout.flush()
     
     def parse_input(self):
         """
