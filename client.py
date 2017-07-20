@@ -55,7 +55,7 @@ class Client:
             print("Error: {}".format(cmd.body))
 
         sys.stdout.flush()
-    
+
     def parse_input(self):
         """
         Parses input sent by the client.
