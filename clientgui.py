@@ -30,12 +30,11 @@ class ClientGUI(tk.Frame):
         Initialize the window of the chat application.
         """
 
-        self.master.title("Chappie")
+        self.master.title("Chat Application")
         self.master.columnconfigure(0, weight=1)
         self.master.columnconfigure(1, weight=4)
         self.master.columnconfigure(2, weight=1)
         self.master.configure(bg="gray20")
-        self.master.resizable(0,0)
 
         # Custom Fonts
         self.header_font = tkFont.Font(family="Verdana", size=14, weight="bold")
@@ -66,15 +65,13 @@ class ClientGUI(tk.Frame):
         self.lbl_chatrooms.configure(bg="gray20", fg="white")
 
         # Create chat room button
-        self.btn_create_chatroom = tk.Button(self.frm_chatrooms, text="Create Chat Room", 
-                                             command=self.btn_create_chatroom_click, height=1, width=20, 
-                                             font=self.default_font, pady=2)
+        # Need to create the create chat room command
+        self.btn_create_chatroom = tk.Button(self.frm_chatrooms, text="Create Chat Room", command=None, height=1, width=20, font=self.default_font, pady=2)
         self.btn_create_chatroom.grid(row=1, column=0)
 
         # Delete chat room button
-        self.btn_delete_chatroom = tk.Button(self.frm_chatrooms, text="Delete Chat Room", 
-                                             command=self.btn_delete_chatroom_click, height=1, width=20, 
-                                             font=self.default_font, pady=2)
+        # Need to create the delete chat room command
+        self.btn_delete_chatroom = tk.Button(self.frm_chatrooms, text="Delete Chat Room", command=None, height=1, width=20, font=self.default_font, pady=2)
         self.btn_delete_chatroom.grid(row=2, column=0)
 
         # Add a frame for the list of chat room buttons
@@ -86,9 +83,7 @@ class ClientGUI(tk.Frame):
         # Need to figure out how to update this from the client
         self.lst_btn_chatrooms = [
             # Initialize with the general chat room
-            tk.Button(self.frm_btn_chatrooms, text="General", 
-                      command=None, height=1, width=20,
-                      font=self.default_font, pady=2)
+            tk.Button(self.frm_btn_chatrooms, text="General", command=None, height=1, width=20, font=self.default_font, pady=2)
         ]
 
         # Display each chat room
@@ -110,7 +105,6 @@ class ClientGUI(tk.Frame):
         # Message Display Window
         self.txt_messages = tk.Text(self.frm_messages, height=25, width=70, font=self.default_font, pady=2)
         self.txt_messages.grid(row=0, column=0, columnspan=2, sticky=tk.N)
-        self.txt_messages.config(state=tk.DISABLED)
 
         # Send Message Box
         self.txt_send_message = tk.Text(self.frm_messages, height=1, width=64, font=self.default_font, pady=2)
@@ -145,67 +139,6 @@ class ClientGUI(tk.Frame):
         for user in ["Matt", "Sterling", "Spencer", "Rabjot"]:
             self.lst_box_users.insert(tk.END, user)
 
-    def btn_create_chatroom_click(self):
-        """
-        Creates a window for the create chat room command.
-        """
-
-        self.wnd_create_chatroom = tk.Toplevel(self.master)
-        self.wnd_create_chatroom.wm_title("Create Chat Room")
-        self.wnd_create_chatroom.configure(bg="gray20")
-        self.wnd_create_chatroom.resizable(0,0)
-
-        # Set size of window and central start location
-        w = 300
-        h = 125
-        sw = self.master.winfo_screenwidth()
-        sh = self.master.winfo_screenheight()
-        x = (sw/2) - (w/2)
-        y = (sh/2) - (h/2)
-        self.wnd_create_chatroom.geometry('%dx%d+%d+%d' % (w, h, x, y))
-
-        # Label for the create chat room window
-        self.lbl_create_chatroom = tk.Label(self.wnd_create_chatroom, text="Create Chat Room", font=self.header_font)
-        self.lbl_create_chatroom.grid(row=0, column=0, padx=10, pady=5)
-        self.lbl_create_chatroom.configure(bg="gray20", fg="white")
-        
-        # Text for the chat room name
-        self.txt_chatroom_name = tk.Text(self.wnd_create_chatroom, height=1, width=35, font=self.default_font)
-        self.txt_chatroom_name.grid(row=1, column=0, padx=10, pady=5)
-
-        # Button to confirm chat room name
-        self.btn_confirm_creation = tk.Button(self.wnd_create_chatroom, text="Confirm",
-                                              command=self.btn_confirm_creation_click,
-                                              font=self.default_font)
-        self.btn_confirm_creation.grid(row=2, column=0, sticky=tk.E, padx=10, pady=5)
-    
-    def btn_confirm_creation_click(self):
-        """
-        Confirms chat room creation and closes the window.
-        """
-
-        # Prepare create command
-        cmd = '/create {}'.format(self.txt_chatroom_name.get('1.0', '1.end'))
-        self.send_to_client(cmd)
-
-        # Close the create chat room window
-        self.wnd_create_chatroom.destroy()
-
-    def btn_delete_chatroom_click(self):
-        """
-        Handles a click on the delete chat room button.
-        """
-        pass
-    
-    def insert_text(self, text):
-        """
-        Allows only the code to update the text message box.
-        """
-
-        self.txt_messages.configure(state=tk.NORMAL)
-        self.txt_messages.insert('end', text)
-        self.txt_messages.configure(state=tk.DISABLED)
-
     def txt_send_message_return(self, event):
         """
         Handles event of a return being entered to the message box.
@@ -216,7 +149,7 @@ class ClientGUI(tk.Frame):
 
     def btn_send_message_click(self):
         """
-        Handles a click on the send message button.
+        Handles a click on the send message button
         """
 
         self.send_to_client(self.txt_send_message.get('1.0', '1.end'))
@@ -238,7 +171,7 @@ class ClientGUI(tk.Frame):
 
         while True:
             line = client.stdout.readline()
-            self.insert_text(line)
+            application.txt_messages.insert('end', line)
 
 if __name__ == '__main__':
     # Start the client
