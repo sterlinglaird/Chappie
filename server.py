@@ -146,7 +146,7 @@ class Server:
             # Create chatroom if it doesnt already exist, if it does then let user know
             if cmd.body in self.chatrooms:
                 errorResponse = Command()
-                errorResponse.init_error("Chatroom '{}' already exists.".format(cmd.body))
+                errorResponse.init_error("Chatroom \"{}\" already exists.".format(cmd.body))
                 errorResponse.send(sock)
                 return
             else:
@@ -166,7 +166,7 @@ class Server:
             if chatroom is None:
                 # Send error if chatroom doesnt exist
                 errorResponse = Command()
-                errorResponse.init_error("Chatroom '{}' doesn't exist.".format(cmd.body))
+                errorResponse.init_error("Chatroom \"{}\" doesn't exist.".format(cmd.body))
                 errorResponse.send(sock)
                 return
             elif chatroom.owner is not currUser:
