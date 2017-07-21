@@ -17,6 +17,7 @@ class Server:
         self.address = (gethostname(), 8585)
         self.tcp_backlog = 5
         self.users = {}
+        self.userlist = []
         self.chatrooms = {"Default": Chatroom("Default", None, True)}
 
     def listen(self):
@@ -73,29 +74,41 @@ class Server:
 
             # Relays the message to all the other clients in the same chatroom that the message was sent from
             self.chatrooms[cmd.specificChatroom].send_all(cmd)
-
-        elif cmd.type == 'connect':
+            
+        elif cmd.type == 'alias':
             # Get the chosen alias and address
             alias = cmd.body
-            address = "{}({})".format(origin_address[0], origin_address[1])
-
+            
             # Check that the alias isn't already in use
-            if alias in self.users.values():
+            if alias in self.userlist:
                 # Send warning back to client
-                # TODO
-                pass
+                errorResponse = Command()
+                errorResponse.init_error("Alias '{}' already exist.".format(alias))
+                errorResponse.send(sock)
+                return
 
             # Update the server data and the command
             newUser = User(alias, sock)
             self.users[sock] = newUser
             self.chatrooms[util.defaultChatroom].add_user(newUser)
             cmd.creator = newUser.alias
+            self.userlist.append(newUser.alias)
             cmd.specificChatroom = util.defaultChatroom
 
-            print("{} connected with origin address: {}".format(alias, address))
+            print("Alias '{}' accepted".format(alias))
 
             # let all users in default chatroom know about the connection
             self.chatrooms[cmd.specificChatroom].send_all(cmd)
+
+        elif cmd.type == 'connect':
+            # Get the chosen alias and address
+            #alias = cmd.body
+            address = "{}:{}".format(origin_address[0], origin_address[1])
+            
+            print("Connected with address '{}'".format(address))
+
+            # let users about connection
+            cmd.send(sock)
         
         elif cmd.type == 'disconnect':
             # Close the socket

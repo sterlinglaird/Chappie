@@ -38,9 +38,14 @@ class Client:
         if cmd.type == 'message':
             print("{}: {}".format(cmd.creator, cmd.body))
         elif cmd.type == 'connect':
+            print("Connection Successful!")
+            print("Please enter  an alias (/set_alias <alias>):")
+        elif cmd.type == 'alias':
             if cmd.creator == self.username:
                 self.chatroom = util.defaultChatroom
-            print("{} connected".format(cmd.creator))
+                print("Alias '{}' confirmed! ".format(cmd.creator))
+            else:
+                print("'{}' joins Chat. ".format(cmd.creator))
         elif cmd.type == 'disconnect':
             print("{} disconnected".format(cmd.creator))
         elif cmd.type == 'join_chatroom':
@@ -82,6 +87,13 @@ class Client:
 
         if cmd_name == '/message':
             cmd.init_send_message(cmd_body, self.chatroom)
+        elif cmd_name == '/set_alias':
+            while len(cmd_body.strip()) <= 3:
+                print("An alias must be greater than three characters long.")
+                print("Please enter  an alias (/set_alias <alias>):")
+                return            
+            self.username = cmd_body
+            cmd.init_set_alias(cmd_body)
         elif cmd_name == '/quit':
             cmd.init_disconnect()
             sys.exit()
@@ -108,19 +120,12 @@ class Client:
         Thread(target=self.listen).start()
 
         # Prompt the user to provide an alias. Seperate so that the first message gets sent as a full line which will be picked up by the client gui
-        print("Please enter an alias: ")
-        alias = input()
-
-        while len(alias.strip()) <= 3:
-            print("An alias must be greater than three characters long.")
-            alias = input("Please enter an alias: ")
+        print("Starting Connection ... ")
 
         # Send a connection request to the server and sets the current user
         cmd = Command()
-        cmd.init_connect(alias)
+        cmd.init_connect()
         cmd.send(self.host_sock)
-
-        self.username = alias
 
         if cmdline:
             # Continually parse input from the user

@@ -29,13 +29,21 @@ class Command:
         self.body = message
         self.specificChatroom = specificChatroom
 
-    def init_connect(self, alias: str):
+    def init_set_alias(self, alias: str):
+        """
+        Initializes the set alias command.
+        """
+
+        self.type = 'alias'
+        self.body = alias
+
+    def init_connect(self):
         """
         Initializes the connect command.
         """
 
         self.type = 'connect'
-        self.body = alias
+        self.body = None
 
     def init_disconnect(self):
         """
