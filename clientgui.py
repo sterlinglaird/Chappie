@@ -43,7 +43,7 @@ class ClientGUI(tk.Frame):
 
         # Set size of window and central start location
         w = 900
-        h = 450
+        h = 460
         sw = self.master.winfo_screenwidth()
         sh = self.master.winfo_screenheight()
         x = (sw/2) - (w/2)
@@ -68,34 +68,33 @@ class ClientGUI(tk.Frame):
         # Create chat room button
         self.btn_create_chatroom = tk.Button(self.frm_chatrooms, text="Create Chat Room", 
                                              command=self.btn_create_chatroom_click, height=1, width=20, 
-                                             font=self.default_font, pady=2)
-        self.btn_create_chatroom.grid(row=1, column=0)
+                                             font=self.default_font, relief=tk.FLAT, bg='white')
+        self.btn_create_chatroom.grid(row=1, column=0, pady=2)
 
         # Delete chat room button
         self.btn_delete_chatroom = tk.Button(self.frm_chatrooms, text="Delete Chat Room", 
                                              command=self.btn_delete_chatroom_click, height=1, width=20, 
-                                             font=self.default_font, pady=2)
-        self.btn_delete_chatroom.grid(row=2, column=0)
+                                             font=self.default_font, relief=tk.FLAT, bg='white')
+        self.btn_delete_chatroom.grid(row=2, column=0, pady=2)
 
         # Add a frame for the list of chat room buttons
         self.frm_btn_chatrooms = tk.Frame(self.frm_chatrooms, pady=5)
         self.frm_btn_chatrooms.grid(row=3, column=0)
         self.frm_btn_chatrooms.configure(bg="gray20")
 
+        # General chat room button
+        self.btn_general_chatroom = tk.Button(self.frm_btn_chatrooms, text="General", 
+                                         height=1, width=20, font=self.default_font, 
+                                         pady=2, relief=tk.FLAT, bg='LightSkyBlue1', state=tk.DISABLED)
+        self.btn_general_chatroom.configure(command=lambda b=self.btn_general_chatroom: self.btn_chatroom_click(b))
+
         # List of chat rooms as buttons
-        # Need to figure out how to update this from the client
+        # Initialize with the general chat room
         self.lst_btn_chatrooms = [
-            # Initialize with the general chat room
-            tk.Button(self.frm_btn_chatrooms, text="General", 
-                      command=None, height=1, width=20,
-                      font=self.default_font, pady=2)
+            self.btn_general_chatroom
         ]
 
-        # Display each chat room
-        chatroom_count = 0
-        for chatroom in self.lst_btn_chatrooms:
-            chatroom.grid(row=chatroom_count, column=0, sticky=tk.N, pady=2)
-            chatroom_count += 1
+        self.update()
 
     def initialize_messages(self):
         """
@@ -108,20 +107,20 @@ class ClientGUI(tk.Frame):
         self.frm_messages.configure(bg="gray20")
 
         # Message Display Window
-        self.txt_messages = tk.Text(self.frm_messages, height=25, width=70, font=self.default_font, pady=2)
-        self.txt_messages.grid(row=0, column=0, columnspan=2, sticky=tk.N)
+        self.txt_messages = tk.Text(self.frm_messages, height=25, width=70, font=self.default_font)
+        self.txt_messages.grid(row=0, column=0, columnspan=2, sticky=tk.N, pady=2)
         self.txt_messages.config(state=tk.DISABLED)
 
         # Send Message Box
-        self.txt_send_message = tk.Text(self.frm_messages, height=1, width=64, font=self.default_font, pady=2)
-        self.txt_send_message.grid(row=1, column=0, sticky=tk.W)
+        self.txt_send_message = tk.Text(self.frm_messages, height=1, width=64, font=self.default_font, pady=5)
+        self.txt_send_message.grid(row=1, column=0, sticky=tk.W, pady=3, padx=3)
         self.txt_send_message.bind('<Return>', self.txt_send_message_return)
 
         # Send Message Button
         self.btn_send_message = tk.Button(self.frm_messages, text="Send",
                                           command=self.btn_send_message_click,
-                                          font=self.default_font)
-        self.btn_send_message.grid(row=1, column=1, sticky=tk.W)
+                                          font=self.default_font, relief=tk.FLAT, bg='white')
+        self.btn_send_message.grid(row=1, column=1, sticky=tk.W, pady=3, padx=2)
 
     def initialize_users(self):
         """
@@ -139,11 +138,25 @@ class ClientGUI(tk.Frame):
         self.lbl_users.configure(bg="gray20", fg="white")
 
         # List of users
-        # Need to populate with real users eventually
-        self.lst_box_users = tk.Listbox(self.frm_users)
+        self.lst_box_users = tk.Listbox(self.frm_users, bd=0, state=tk.DISABLED)
         self.lst_box_users.grid(row=1, column=0)
-        for user in ["Matt", "Sterling", "Spencer", "Rabjot"]:
-            self.lst_box_users.insert(tk.END, user)
+
+    def btn_chatroom_click(self, btn_chatroom):
+        """
+        Joins the chat room clicked on.
+        """
+
+        # Make the previous chatroom button active again
+        prev_btn_chatroom = next((btn for btn in self.lst_btn_chatrooms if btn['state'] == 'disabled'), None)
+        if prev_btn_chatroom != None:
+            prev_btn_chatroom.config(state=tk.ACTIVE, bg='white')
+
+        # Disable the chatroom button clicked on
+        btn_chatroom.configure(state=tk.DISABLED, bg='LightSkyBlue1')
+
+        # Send join command
+        cmd = '/join {}'.format(btn_chatroom['text'])
+        self.send_to_client(cmd)
 
     def btn_create_chatroom_click(self):
         """
@@ -176,7 +189,7 @@ class ClientGUI(tk.Frame):
         # Button to confirm chat room name
         self.btn_confirm_creation = tk.Button(self.wnd_create_chatroom, text="Confirm",
                                               command=self.btn_confirm_creation_click,
-                                              font=self.default_font)
+                                              font=self.default_font, relief=tk.FLAT)
         self.btn_confirm_creation.grid(row=2, column=0, sticky=tk.E, padx=10, pady=5)
     
     def btn_confirm_creation_click(self):
@@ -184,18 +197,47 @@ class ClientGUI(tk.Frame):
         Confirms chat room creation and closes the window.
         """
 
-        # Prepare create command
+        # Send create command
         cmd = '/create {}'.format(self.txt_chatroom_name.get('1.0', '1.end'))
         self.send_to_client(cmd)
 
         # Close the create chat room window
         self.wnd_create_chatroom.destroy()
+    
+    def create_chatroom_btn(self, chatroom_name):
+        """
+        Creates a button for a newly created chat room.
+        """
 
+        # Chat room button
+        btn_chatroom = tk.Button(self.frm_btn_chatrooms, text=chatroom_name, 
+                                 height=1, width=20, font=self.default_font, 
+                                 pady=2, relief=tk.FLAT, bg='white')
+        btn_chatroom.configure(command=lambda b=btn_chatroom: self.btn_chatroom_click(b))
+
+        # Add it to the list of buttons
+        self.lst_btn_chatrooms.append(btn_chatroom)
+        self.update()
+    
     def btn_delete_chatroom_click(self):
         """
-        Handles a click on the delete chat room button.
+        Deletes the current chat room if the user is the owner.
         """
-        pass
+
+        # Get the current chat room
+        curr_btn_chatroom = next((btn for btn in self.lst_btn_chatrooms if btn['state'] == 'disabled'), None)
+
+        # TODO: Check if the user is the owner
+
+        # Send delete command
+        cmd = '/delete {}'.format(curr_btn_chatroom['text'])
+        self.send_to_client(cmd)
+
+        self.btn_general_chatroom.configure(state=tk.DISABLED, bg='LightSkyBlue1')
+
+        # Remove from the list of buttons
+        curr_btn_chatroom.destroy()
+        self.update()
     
     def insert_text(self, text):
         """
@@ -222,9 +264,20 @@ class ClientGUI(tk.Frame):
         self.send_to_client(self.txt_send_message.get('1.0', '1.end'))
         self.txt_send_message.delete('1.0', '1.end')
 
+    def update(self):
+        """
+        Updates the GUI.
+        """
+        
+        # Display each chat room
+        chatroom_count = 0
+        for chatroom in self.lst_btn_chatrooms:
+            chatroom.grid(row=chatroom_count, column=0, sticky=tk.N, pady=2)
+            chatroom_count += 1
+
     def send_to_client(self, body: str):
         """
-        Sends data back to the client process
+        Sends data back to the client process.
         """
 
         client.stdin.write("{}\n".format(body).encode())
@@ -233,12 +286,22 @@ class ClientGUI(tk.Frame):
 
     def handle_data(self):
         """
-        Handles data from the client process's stdout
+        Handles data from the client process' stdout.
         """
 
         while True:
             line = client.stdout.readline()
-            print('Receiving: ' + line.decode("utf-8").strip())
+            received = line.decode("utf-8").strip()
+            print('Receiving: ' + received)
+
+            # Update the GUI based on data retrieved from client
+            if 'created' in received:
+                chatroom_name = received.rsplit(None, 1)[-1]
+                self.create_chatroom_btn(chatroom_name)
+            
+            elif 'deleted' in received:
+                pass
+
             self.insert_text(line)
 
 if __name__ == '__main__':
