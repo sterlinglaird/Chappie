@@ -93,6 +93,14 @@ class Command:
         self.type = 'error'
         self.body = message
 
+    def init_list_users(self, chatroom):
+        """
+        Initializes the delete chatroom command.
+        """
+
+        self.type = 'list_users'
+        self.body = chatroom
+
     def send(self, sock: socket):
         """
         Sends the command using the provided socket.
@@ -100,3 +108,10 @@ class Command:
 
         data = json.dumps({'type': self.type, 'creator': self.creator, 'specificChatroom': self.specificChatroom, 'body': self.body})
         sock.send(data.encode(encoding='UTF-8'))
+
+    def stringify(self):
+        """
+        returns the json representation of the command.
+        """
+
+        return json.dumps({'type': self.type, 'creator': self.creator, 'specificChatroom': self.specificChatroom, 'body': self.body})
