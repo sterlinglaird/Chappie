@@ -1,1 +1,1 @@
-defaultChatroom = "Default"
+defaultChatroom = "General"

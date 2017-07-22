@@ -76,6 +76,14 @@ class Command:
 
         self.type = 'delete_chatroom'
         self.body = chatroom
+    
+    def init_get_chatrooms(self, chatrooms: list):
+        """
+        Initializes the get chatrooms command.
+        """
+
+        self.type = 'get_chatrooms'
+        self.body = chatrooms
 
     def init_error(self, message):
         """

@@ -9,7 +9,10 @@ class ClientGUI(tk.Frame):
         Initialize the client GUI.
         """
 
+        # Client specific properties
         self.client = client
+        self.lst_all_chatrooms = []
+        self.bool_lst_all_chatrooms_updated = False
 
         # Initialize Tkinter GUI
         self.master = tk.Tk()
@@ -94,7 +97,9 @@ class ClientGUI(tk.Frame):
             self.btn_general_chatroom
         ]
 
-        self.update()
+        # Get the list of chatrooms, create a button for each not currently a button
+        cmd_get_chatrooms = '/get_chatrooms'
+        self.send_to_client(cmd_get_chatrooms)
 
     def initialize_messages(self):
         """
@@ -228,14 +233,26 @@ class ClientGUI(tk.Frame):
         curr_btn_chatroom = next((btn for btn in self.lst_btn_chatrooms if btn['state'] == 'disabled'), None)
 
         # TODO: Check if the user is the owner
+        if curr_btn_chatroom['text'] == 'General':
+            self.insert_text("Error: You cannot delete the General chat room.\n")
+            return
 
         # Send delete command
         cmd = '/delete {}'.format(curr_btn_chatroom['text'])
         self.send_to_client(cmd)
 
         self.btn_general_chatroom.configure(state=tk.DISABLED, bg='LightSkyBlue1')
+        
+    def delete_chatroom_btn(self, chatroom_name):
+        """
+        Deletes the corresponding chat room button.
+        """
+
+        # Get the chat room button
+        curr_btn_chatroom = next((btn for btn in self.lst_btn_chatrooms if btn['text'] == chatroom_name), None)
 
         # Remove from the list of buttons
+        self.lst_btn_chatrooms.remove(curr_btn_chatroom)
         curr_btn_chatroom.destroy()
         self.update()
     
@@ -268,7 +285,14 @@ class ClientGUI(tk.Frame):
         """
         Updates the GUI.
         """
-        
+
+        # Create a button for each new chat room
+        lst_names_btn_chatrooms = (btn['text'] for btn in self.lst_btn_chatrooms)
+        lst_new_chatrooms = (cht for cht in self.lst_all_chatrooms if cht not in lst_names_btn_chatrooms)
+
+        for new_chatroom in lst_new_chatrooms:
+            self.create_chatroom_btn(new_chatroom)
+
         # Display each chat room
         chatroom_count = 0
         for chatroom in self.lst_btn_chatrooms:
@@ -298,11 +322,21 @@ class ClientGUI(tk.Frame):
             if 'created' in received:
                 chatroom_name = received.rsplit(None, 1)[-1]
                 self.create_chatroom_btn(chatroom_name)
+                self.insert_text(line)
             
             elif 'deleted' in received:
-                pass
+                chatroom_name = received.rsplit(None, 1)[-1]
+                self.delete_chatroom_btn(chatroom_name)
+                self.insert_text(line)
+            
+            elif 'CR:' in received:
+                self.lst_all_chatrooms.append(received.rsplit(None, 1)[-1])
+            
+            elif 'DONE_CR_LIST' in received:
+                self.update()
 
-            self.insert_text(line)
+            else:
+                self.insert_text(line)
 
 if __name__ == '__main__':
     # Start the client
