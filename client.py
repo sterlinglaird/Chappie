@@ -19,6 +19,7 @@ class Client:
         self.host_sock = socket()
         self.username = None
         self.chatroom = None
+        self.chatrooms = []
 
     def listen(self):
         """
@@ -37,25 +38,38 @@ class Client:
 
         if cmd.type == 'message':
             print("{}: {}".format(cmd.creator, cmd.body))
+
         elif cmd.type == 'connect':
             print("Connection Successful!")
-            print("Please enter  an alias (/set_alias <alias>):")
+            print("Please enter an alias (/set_alias <alias>):")
+
         elif cmd.type == 'alias':
             if cmd.creator == self.username:
                 self.chatroom = util.defaultChatroom
                 print("Alias '{}' confirmed! ".format(cmd.creator))
             else:
                 print("'{}' joins Chat. ".format(cmd.creator))
+
         elif cmd.type == 'disconnect':
             print("{} disconnected".format(cmd.creator))
+
         elif cmd.type == 'join_chatroom':
             if cmd.creator == self.username:
                 self.chatroom = cmd.body
             print("{} joined chatroom {}".format(cmd.creator, cmd.body))
+
         elif cmd.type == 'create_chatroom':
             print("{} created chatroom {}".format(cmd.creator, cmd.body))
+
         elif cmd.type == 'delete_chatroom':
             print("{} deleted chatroom {}".format(cmd.creator, cmd.body))
+
+        elif cmd.type == 'get_chatrooms':
+            chatrooms = cmd.body
+            for chatroom in chatrooms:
+                print('CR: {}'.format(chatroom))
+            print('DONE_CR_LIST')
+
         elif cmd.type == 'error':
             print("Error: {}".format(cmd.body))
 
@@ -88,12 +102,13 @@ class Client:
         if cmd_name == '/message':
             cmd.init_send_message(cmd_body, self.chatroom)
         elif cmd_name == '/set_alias':
-            while len(cmd_body.strip()) <= 3:
+            alias = cmd_body.strip()
+            while len(alias) <= 3:
                 print("An alias must be greater than three characters long.")
-                print("Please enter  an alias (/set_alias <alias>):")
+                print("Please enter an alias (/set_alias <alias>):")
                 return            
-            self.username = cmd_body
-            cmd.init_set_alias(cmd_body)
+            self.username = alias
+            cmd.init_set_alias(alias)
         elif cmd_name == '/quit':
             cmd.init_disconnect()
             sys.exit()
@@ -103,6 +118,8 @@ class Client:
             cmd.init_create_chatroom(cmd_body)
         elif cmd_name == '/delete':
             cmd.init_delete_chatroom(cmd_body)
+        elif cmd_name == '/get_chatrooms':
+            cmd.init_get_chatrooms(None)
         else:
             print("\"{}\" is not a valid command.".format(cmd_name))
             return

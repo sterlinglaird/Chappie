@@ -18,7 +18,7 @@ class Server:
         self.tcp_backlog = 5
         self.users = {}
         self.userlist = []
-        self.chatrooms = {"Default": Chatroom("Default", None, True)}
+        self.chatrooms = {"General": Chatroom("General", None, True)}
 
     def listen(self):
         """
@@ -42,11 +42,12 @@ class Server:
         while True:
             try:
                 data = client_sock.recv(1024)
-            except:
+            except: # Should specify the actual exception that is occuring
                 break
 
-            cmd = Command(data)
-            self.execute_command(cmd, origin_address, client_sock)
+            if data is not None:
+                cmd = Command(data)
+                self.execute_command(cmd, origin_address, client_sock)
 
         print("{} lost connection".format(self.users[client_sock].alias))
         self.users.pop(client_sock, None)
@@ -102,8 +103,8 @@ class Server:
 
         elif cmd.type == 'connect':
             # Get the chosen alias and address
-            #alias = cmd.body
             address = "{}:{}".format(origin_address[0], origin_address[1])
+            alias = address
             
             print("Connected with address '{}'".format(address))
 
@@ -213,6 +214,11 @@ class Server:
                     joinCmd.send(user_socket.socket)
 
             print("{} deleted chatroom {}".format(currUser.alias, cmd.body))
+        
+        elif cmd.type == 'get_chatrooms':
+            get_chatrooms_cmd = Command()
+            get_chatrooms_cmd.init_get_chatrooms(list(self.chatrooms.keys()))
+            get_chatrooms_cmd.send(sock)
 
     def send_all(self, cmd: Command):
         for user_socket in list(self.users):
