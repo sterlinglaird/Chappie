@@ -220,6 +220,19 @@ class Server:
             get_chatrooms_cmd.init_get_chatrooms(list(self.chatrooms.keys()))
             get_chatrooms_cmd.send(sock)
 
+        elif cmd.type == 'list_users':
+            chatroom = self.chatrooms.get(cmd.body, None)
+
+            for user in chatroom.users:
+                if user == currUser.alias:
+                    continue
+                responseCmd = Command()
+                responseCmd.init_join_chatroom(chatroom.name)
+                responseCmd.creator = user
+                responseCmd.send(sock)
+
+                print("Listing user '{}' for '{}'".format(user, currUser.alias))
+
     def send_all(self, cmd: Command):
         for user_socket in list(self.users):
             try:

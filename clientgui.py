@@ -242,7 +242,7 @@ class ClientGUI(tk.Frame):
         curr_btn_chatroom = next((btn for btn in self.lst_btn_chatrooms if btn['state'] == 'disabled'), None)
 
         # TODO: Check if the user is the owner
-        if curr_btn_chatroom['text'] == 'General':
+        if curr_btn_chatroom['text'] == util.defaultChatroom:
             self.insert_text("Error: You cannot delete the General chat room.\n")
             return
 
@@ -338,6 +338,8 @@ class ClientGUI(tk.Frame):
             cmd.init_delete_chatroom(cmd_body)
         elif cmd_name == '/list_users':
             cmd.init_list_users(cmd_body)
+        elif cmd_name == '/get_chatrooms':
+            cmd.init_get_chatrooms([])
         else:
             print("\"{}\" is not a valid command.".format(cmd_name))
             return
@@ -392,6 +394,9 @@ class ClientGUI(tk.Frame):
             line += "{} deleted chatroom {}".format(cmd.creator, cmd.body)
         elif cmd.type == 'error':
             line += "Error: {}".format(cmd.body)
+        elif cmd.type == 'get_chatrooms':
+            self.lst_all_chatrooms.append(*cmd.body)
+            self.update()
 
         self.insert_text("{}\n".format(line))
         
