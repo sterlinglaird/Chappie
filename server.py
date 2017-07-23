@@ -194,7 +194,7 @@ class Server:
             elif chatroom.owner is not currUser:
                 # Send error if user doesnt own the chatroom
                 errorResponse = Command()
-                errorResponse.init_error("Chatroom {} is not owned by you so you cannot delete it.".format(chatroom.name))
+                errorResponse.init_error("Chatroom \"{}\" is not owned by you so you cannot delete it.".format(chatroom.name))
                 errorResponse.send(sock)
                 return
 

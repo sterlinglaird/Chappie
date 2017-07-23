@@ -17,7 +17,6 @@ class ClientGUI(tk.Frame):
         self.chatroom = None
         self.alias = None
         self.lst_all_chatrooms = []
-        self.bool_lst_all_chatrooms_updated = False
 
         # Initialize Tkinter GUI
         self.master = tk.Tk()
@@ -102,9 +101,14 @@ class ClientGUI(tk.Frame):
             self.btn_general_chatroom
         ]
 
+        # Add it to the list of chatrooms
+        self.lst_all_chatrooms.append(self.btn_general_chatroom['text'])
+
         # Get the list of chatrooms, create a button for each not currently a button
         cmd_get_chatrooms = '/get_chatrooms'
         self.send_to_client(cmd_get_chatrooms)
+
+        self.update()
 
     def initialize_messages(self):
         """
@@ -202,6 +206,7 @@ class ClientGUI(tk.Frame):
         # Text for the chat room name
         self.txt_chatroom_name = tk.Text(self.wnd_create_chatroom, height=1, width=35, font=self.default_font)
         self.txt_chatroom_name.grid(row=1, column=0, padx=10, pady=5)
+        self.txt_chatroom_name.bind('<Return>', self.txt_chatroom_name_return)
 
         # Button to confirm chat room name
         self.btn_confirm_creation = tk.Button(self.wnd_create_chatroom, text="Confirm",
@@ -214,8 +219,14 @@ class ClientGUI(tk.Frame):
         Confirms chat room creation and closes the window.
         """
 
+        # Check that the chatroom name is valid
+        chatroom_name = self.txt_chatroom_name.get('1.0', '1.end')
+        chatroom_name = chatroom_name.replace(" ", "_")
+        if len(chatroom_name) == 0 or len(chatroom_name) > 16:
+            return
+
         # Send create command
-        cmd = '/create {}'.format(self.txt_chatroom_name.get('1.0', '1.end'))
+        cmd = '/create {}'.format(chatroom_name)
         self.send_to_client(cmd)
 
         # Close the create chat room window
@@ -225,6 +236,9 @@ class ClientGUI(tk.Frame):
         """
         Creates a button for a newly created chat room.
         """
+
+        # Add the chatroom to the list
+        self.lst_all_chatrooms.append(chatroom_name)
 
         # Chat room button
         btn_chatroom = tk.Button(self.frm_btn_chatrooms, text=chatroom_name,
@@ -243,9 +257,9 @@ class ClientGUI(tk.Frame):
 
         # Get the current chat room
         curr_btn_chatroom = next((btn for btn in self.lst_btn_chatrooms if btn['state'] == 'disabled'), None)
+        chatroom_name = curr_btn_chatroom['text']
 
-        # TODO: Check if the user is the owner
-        if curr_btn_chatroom['text'] == util.defaultChatroom:
+        if chatroom_name == util.defaultChatroom:
             self.insert_text("Error: You cannot delete the General chat room.\n")
             return
 
@@ -253,12 +267,16 @@ class ClientGUI(tk.Frame):
         cmd = '/delete {}'.format(curr_btn_chatroom['text'])
         self.send_to_client(cmd)
 
-        self.btn_general_chatroom.configure(state=tk.DISABLED, bg='LightSkyBlue1')
-
     def delete_chatroom_btn(self, chatroom_name):
         """
         Deletes the corresponding chat room button.
         """
+        
+        # The owner is verified server side, need to show that the user is in General now
+        self.btn_general_chatroom.configure(state=tk.DISABLED, bg='LightSkyBlue1')
+
+        # Remove from the list of chatrooms
+        self.lst_all_chatrooms.remove(chatroom_name)
 
         # Get the chat room button
         curr_btn_chatroom = next((btn for btn in self.lst_btn_chatrooms if btn['text'] == chatroom_name), None)
@@ -289,6 +307,14 @@ class ClientGUI(tk.Frame):
         self.txt_messages.insert('end', text)
         self.txt_messages.configure(state=tk.DISABLED)
 
+    def txt_chatroom_name_return(self, event):
+        """
+        Handles event of a return being entered to the message box.
+        """
+
+        self.btn_confirm_creation_click()
+        return 'break'  # Stops the <Return> event from updating the text box with a newline
+
     def txt_send_message_return(self, event):
         """
         Handles event of a return being entered to the message box.
@@ -309,13 +335,6 @@ class ClientGUI(tk.Frame):
         """
         Updates the GUI.
         """
-
-        # Create a button for each new chat room
-        lst_names_btn_chatrooms = (btn['text'] for btn in self.lst_btn_chatrooms)
-        lst_new_chatrooms = (cht for cht in self.lst_all_chatrooms if cht not in lst_names_btn_chatrooms)
-
-        for new_chatroom in lst_new_chatrooms:
-            self.create_chatroom_btn(new_chatroom)
 
         # Display each chat room
         chatroom_count = 0
@@ -381,7 +400,7 @@ class ClientGUI(tk.Frame):
             line = "{}: {}".format(cmd.creator, cmd.body)
 
         elif cmd.type == 'connect':
-            line = "Connection Successful!\nPlease enter  an alias (/set_alias <alias>):"
+            line = "Connection Successful!\nPlease enter an alias (/set_alias <alias>):"
 
         elif cmd.type == 'alias':
             if cmd.creator == self.alias:
@@ -417,14 +436,16 @@ class ClientGUI(tk.Frame):
 
         elif cmd.type == 'delete_chatroom':
             line = "{} deleted chatroom {}".format(cmd.creator, cmd.body)
+            self.delete_chatroom_btn(cmd.body)
 
         elif cmd.type == 'error':
             line = "Error: {}".format(cmd.body)
 
         elif cmd.type == 'get_chatrooms':
-            for room in cmd.body:
-                self.lst_all_chatrooms.append(room)
-            self.update()
+            for chatroom in cmd.body:
+                if chatroom not in self.lst_all_chatrooms:
+                    self.create_chatroom_btn(chatroom)
+            #self.update()
 
         if line:
             self.insert_text("{}\n".format(line))
