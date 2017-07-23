@@ -78,11 +78,11 @@ class Server:
 
             # Relays the message to all the other clients in the same chatroom that the message was sent from
             self.chatrooms[cmd.specificChatroom].send_all(cmd)
-            
+
         elif cmd.type == 'alias':
             # Get the chosen alias and address
             alias = cmd.body
-            
+
             # Check that the alias isn't already in use
             if alias in self.userlist:
                 # Send warning back to client
@@ -108,12 +108,12 @@ class Server:
             # Get the chosen alias and address
             address = "{}:{}".format(origin_address[0], origin_address[1])
             alias = address
-            
+
             print("Connected with address '{}'".format(address))
 
             # let users about connection
             cmd.send(sock)
-        
+
         elif cmd.type == 'disconnect':
             # Close the socket
             sock.close()
@@ -136,28 +136,33 @@ class Server:
                 chatroom.send_all(cmd)
 
         elif cmd.type == 'join_chatroom':
-            chatroom = self.chatrooms.get(cmd.body, None)
+            userOccupies = self.get_all_chatrooms(currUser)
+            newChatroom = self.chatrooms.get(cmd.body, None)
 
-            if chatroom is None:
+            if newChatroom is None:
                 errorResponse = Command()
                 errorResponse.init_error("Chatroom '{}' doesn't exist.".format(cmd.body))
                 errorResponse.send(sock)
                 return
 
-            # Remove user from previous chatroom
+            # Remove user from previous chatrooms
             for chatroom in self.chatrooms.values():
                 chatroom.rem_user(currUser)
 
             # Add user to chatroom
-            chatroom.add_user(currUser)
+            newChatroom.add_user(currUser)
 
-            print("{} joined chatroom {}".format(currUser.alias, cmd.body))
+            print("{} joined chatroom {}".format(currUser.alias, newChatroom.name))
 
             # Adds a tag that says who authored the command
             cmd.creator = currUser.alias
 
             # Notify users in chatroom that user has joined
-            self.chatrooms[cmd.body].send_all(cmd)
+            self.chatrooms[newChatroom.name].send_all(cmd)
+
+            # Notify users in old chatrooms that user joined a different one
+            for chatroom in userOccupies:
+                chatroom.send_all(cmd)
 
         elif cmd.type == 'create_chatroom':
             # Create chatroom if it doesnt already exist, if it does then let user know
@@ -217,26 +222,45 @@ class Server:
                     joinCmd.send(user_socket.socket)
 
             print("{} deleted chatroom {}".format(currUser.alias, cmd.body))
-        
+
         elif cmd.type == 'get_chatrooms':
             get_chatrooms_cmd = Command()
             get_chatrooms_cmd.init_get_chatrooms(list(self.chatrooms.keys()))
             get_chatrooms_cmd.send(sock)
 
-        elif cmd.type == 'list_users':
-            chatroom = self.chatrooms.get(cmd.body, None)
 
-            for user in chatroom.users:
+        elif cmd.type == 'list_users':
+            newChatroom = self.chatrooms.get(cmd.body, None)
+
+            # send a join command for every user in the chatroom, except the current user
+            for user in newChatroom.users:
                 if user == currUser.alias:
                     continue
+
                 responseCmd = Command()
-                responseCmd.init_join_chatroom(chatroom.name)
+                responseCmd.init_join_chatroom(newChatroom.name)
                 responseCmd.creator = user
                 responseCmd.send(sock)
 
                 print("Listing user '{}' for '{}'".format(user, currUser.alias))
 
+    def get_all_chatrooms(self, user: User):
+        '''
+        Returns all chatrooms a user belongs to
+        '''
+
+        occupies = []
+        for chatroom in self.chatrooms.values():
+            if chatroom.users.get(user.alias, None):
+                occupies.append(chatroom)
+
+        return occupies
+
     def send_all(self, cmd: Command):
+        '''
+        Sends a command to all users
+        '''
+
         for user_socket in list(self.users):
             try:
                 cmd.send(user_socket)
