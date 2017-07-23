@@ -1,5 +1,6 @@
 import json
 from socket import socket
+import struct
 
 class Command:
     def __init__(self, data=None):
@@ -107,7 +108,9 @@ class Command:
         """
 
         data = json.dumps({'type': self.type, 'creator': self.creator, 'specificChatroom': self.specificChatroom, 'body': self.body})
-        sock.send(data.encode(encoding='UTF-8'))
+        length = len(data)
+        sock.sendall(struct.pack('!I', length))
+        sock.sendall(data.encode(encoding='UTF-8'))
 
     def stringify(self):
         """

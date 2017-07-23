@@ -1,5 +1,6 @@
 from socket import *
 from threading import Thread
+import struct
 
 # Custom Modules
 from command import Command
@@ -41,7 +42,9 @@ class Server:
 
         while True:
             try:
-                data = client_sock.recv(1024)
+                lengthbuf = client_sock.recv(4)
+                length, = struct.unpack('!I', lengthbuf)
+                data = client_sock.recv(length)
             except: # Should specify the actual exception that is occuring
                 break
 
