@@ -1,6 +1,7 @@
 from socket import *
 from threading import Thread
 import sys
+import struct
 
 # Custom Modules
 from command import Command
@@ -25,7 +26,10 @@ class Client:
         """
 
         while True:
-            data = self.host_sock.recv(1024)
+            lengthbuf = self.host_sock.recv(4)
+            length, = struct.unpack('!I', lengthbuf)
+            data = self.host_sock.recv(length)
+
             cmd = Command(data)
             self.execute_command(cmd)
 
