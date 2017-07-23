@@ -395,7 +395,8 @@ class ClientGUI(tk.Frame):
         elif cmd.type == 'error':
             line += "Error: {}".format(cmd.body)
         elif cmd.type == 'get_chatrooms':
-            self.lst_all_chatrooms.append(*cmd.body)
+            for room in cmd.body:
+                self.lst_all_chatrooms.append(room)
             self.update()
 
         self.insert_text("{}\n".format(line))
