@@ -67,7 +67,7 @@ class Client:
         Thread(target=self.listen).start()
 
         # Prompt the user to provide an alias. Seperate so that the first message gets sent as a full line which will be picked up by the client gui
-        print("Starting Connection ... ")
+        #print("Starting Connection ... ")
 
         # Send a connection request to the server and sets the current user
         cmd = Command()
