@@ -86,9 +86,25 @@ class Command:
         self.type = 'get_chatrooms'
         self.body = chatrooms
 
+    def init_block_user(self, user: str):
+        """
+        Initializes the block user command.
+        """
+
+        self.type = 'block_user'
+        self.body = user
+
+    def init_unblock_user(self, user: str):
+        """
+        Initializes the unblock user command.
+        """
+
+        self.type = 'unblock_user'
+        self.body = user
+
     def init_error(self, message):
         """
-        Initializes the delete chatroom command.
+        Initializes the error command.
         """
 
         self.type = 'error'
