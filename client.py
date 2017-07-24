@@ -45,7 +45,7 @@ class Client:
                 self.chatroom = util.defaultChatroom
                 print("Alias '{}' confirmed! ".format(cmd.creator))
             else:
-                print("'{}' joins Chat. ".format(cmd.creator))
+                print("'{}' joined Chat. ".format(cmd.creator))
         elif cmd.type == 'disconnect':
             print("{} disconnected".format(cmd.creator))
         elif cmd.type == 'join_chatroom':
@@ -56,6 +56,10 @@ class Client:
             print("{} created chatroom {}".format(cmd.creator, cmd.body))
         elif cmd.type == 'delete_chatroom':
             print("{} deleted chatroom {}".format(cmd.creator, cmd.body))
+        elif cmd.type == 'block_user':
+            print("{} blocked {} from chatroom {}".format(cmd.creator, cmd.body, cmd.specificChatroom))
+        elif cmd.type == 'unblock_user':
+            print("{} unblocked {} from chatroom {}".format(cmd.creator, cmd.body, cmd.specificChatroom))
         elif cmd.type == 'error':
             print("Error: {}".format(cmd.body))
 
@@ -103,6 +107,10 @@ class Client:
             cmd.init_create_chatroom(cmd_body)
         elif cmd_name == '/delete':
             cmd.init_delete_chatroom(cmd_body)
+        elif cmd_name == '/block':
+            cmd.init_block_user(cmd_body)
+        elif cmd_name == '/unblock':
+            cmd.init_unblock_user(cmd_body)
         else:
             print("\"{}\" is not a valid command.".format(cmd_name))
             return

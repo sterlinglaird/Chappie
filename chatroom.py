@@ -7,12 +7,19 @@ class Chatroom:
         self.owner = owner
         self.default = default
         self.users = {}
+        self.blocked = {}
 
     def add_user(self, user: User):
         self.users[user.alias] = user
 
     def rem_user(self, user: User):
         self.users.pop(user.alias, None)
+
+    def  block_user(self, user: User):
+        self.blocked[user.alias] = user
+
+    def unblock_user(self, user: User):
+        self.blocked.pop(user.alias, None)
 
     def send_all(self, cmd: Command):
         for user in list(self.users):
