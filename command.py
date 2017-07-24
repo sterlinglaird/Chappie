@@ -1,5 +1,6 @@
 import json
 from socket import socket
+import struct
 
 class Command:
     def __init__(self, data=None):
@@ -76,6 +77,14 @@ class Command:
 
         self.type = 'delete_chatroom'
         self.body = chatroom
+    
+    def init_get_chatrooms(self, chatrooms: list):
+        """
+        Initializes the get chatrooms command.
+        """
+
+        self.type = 'get_chatrooms'
+        self.body = chatrooms
 
     def init_block_user(self, user: str):
         """
@@ -101,10 +110,27 @@ class Command:
         self.type = 'error'
         self.body = message
 
+    def init_list_users(self, chatroom):
+        """
+        Initializes the delete chatroom command.
+        """
+
+        self.type = 'list_users'
+        self.body = chatroom
+
     def send(self, sock: socket):
         """
         Sends the command using the provided socket.
         """
 
         data = json.dumps({'type': self.type, 'creator': self.creator, 'specificChatroom': self.specificChatroom, 'body': self.body})
-        sock.send(data.encode(encoding='UTF-8'))
+        length = len(data)
+        sock.sendall(struct.pack('!I', length))
+        sock.sendall(data.encode(encoding='UTF-8'))
+
+    def stringify(self):
+        """
+        returns the json representation of the command.
+        """
+
+        return json.dumps({'type': self.type, 'creator': self.creator, 'specificChatroom': self.specificChatroom, 'body': self.body})
