@@ -242,22 +242,27 @@ class Server:
                                 blocked_user = blocked_user_location.users[cmd.body]
                                 # Block the user
                                 user_location.block_user(blocked_user)
-                                # If the blocker and the user being blocked are in the same room
-                                if user_location == blocked_user_location:
-                                    # Remove the blocked user from the room, and return them to Default
-                                    user_location.rem_user(blocked_user)
-                                    self.chatrooms[util.defaultChatroom].add_user(blocked_user)
-
-                                print("{} blocked {} from chatroom {}".format(currUser.alias, cmd.body, user_location.name))
-
+                                
                                 # Add a tag that says who authored the command
                                 cmd.creator = currUser.alias
 
                                 # Add a tag that says which room the user is blocked from
                                 cmd.specificChatroom = user_location.name
 
-                                # Let all users know about the block
-                                self.send_all(cmd)
+                                # Let all users in the blocker's room know about the block
+                                user_location.send_all(cmd)
+
+                                # If the blocker and the user being blocked are in the same room
+                                if user_location == blocked_user_location:
+                                    # Remove the blocked user from the room, and return them to Default
+                                    user_location.rem_user(blocked_user)
+                                    self.chatrooms[util.defaultChatroom].add_user(blocked_user)
+                                else:
+                                    # Let the blocked user's room know about the block
+                                    blocked_user_location.send_all(cmd)
+
+                                print("{} blocked {} from chatroom {}".format(currUser.alias, cmd.body, user_location.name))
+
                                 return
     
             # If the user can't be found
@@ -293,11 +298,16 @@ class Server:
                                 # Add a tag that says who authored the command
                                 cmd.creator = currUser.alias
 
-                                # Add a tag that says which room the user is blocked from
+                                # Add a tag that says which room the user is unblocked from
                                 cmd.specificChatroom = user_location.name
 
-                                # Let all users know about the block
-                                self.send_all(cmd)
+                                # Let all users in the room know about the unblock
+                                user_location.send_all(cmd)
+
+                                if user_location != blocked_user_location:
+                                    # Let the blocked user's room know about the block
+                                    blocked_user_location.send_all(cmd)
+                                
                                 return
 
             # If the user can't be found
