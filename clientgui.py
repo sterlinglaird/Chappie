@@ -371,7 +371,12 @@ class ClientGUI(tk.Frame):
             cmd.init_list_users(cmd_body)
         elif cmd_name == '/get_chatrooms':
             cmd.init_get_chatrooms([])
+        elif cmd_name == '/block':
+            cmd.init_block_user(cmd_body)
+        elif cmd_name == '/unblock':
+            cmd.init_unblock_user(cmd_body)
         else:
+            # assume it's a message (check 200 character max)
             print("\"{}\" is not a valid command.".format(cmd_name))
             return
 
