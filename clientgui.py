@@ -452,6 +452,18 @@ class ClientGUI(tk.Frame):
                     self.create_chatroom_btn(chatroom)
             #self.update()
 
+        elif cmd.type == 'block_user':
+            if cmd.creator == self.alias:
+                line = "You blocked user {}".format(cmd.body)
+            if cmd.body == self.alias:
+                line = "{} blocked you from the chatroom.".format(cmd.creator)
+
+        elif cmd.type == 'unblock_user':
+            if cmd.creator == self.alias:
+                line = "You unblocked user {}".format(cmd.body)
+            if cmd.body == self.alias:
+                line = "{} unblocked you.".format(cmd.creator)
+
         if line:
             self.insert_text("{}\n".format(line))
         

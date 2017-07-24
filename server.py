@@ -139,6 +139,12 @@ class Server:
             userOccupies = self.get_all_chatrooms(currUser)
             newChatroom = self.chatrooms.get(cmd.body, None)
 
+            if newChatroom in userOccupies:
+                errorResponse = Command()
+                errorResponse.init_error("You are already in chatroom '{}'.".format(cmd.body))
+                errorResponse.send(sock)
+                return
+
             if newChatroom is None:
                 errorResponse = Command()
                 errorResponse.init_error("Chatroom '{}' doesn't exist.".format(cmd.body))
