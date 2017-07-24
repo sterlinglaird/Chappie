@@ -348,6 +348,7 @@ class Server:
                 responseCmd = Command()
                 responseCmd.init_join_chatroom(newChatroom.name)
                 responseCmd.creator = user
+                responseCmd.suppress = True
                 responseCmd.send(sock)
 
                 print("Listing user '{}' for '{}'".format(user, currUser.alias))

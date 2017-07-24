@@ -15,11 +15,13 @@ class Command:
             self.body = data['body']
             self.creator = data['creator']
             self.specificChatroom = data['specificChatroom']
+            self.suppress = data['suppress']
         else:
             self.type = None
             self.body = None
             self.creator = None
             self.specificChatroom = None
+            self.suppress = False
 
     def init_send_message(self, message: str, specificChatroom: str):
         """
@@ -123,7 +125,7 @@ class Command:
         Sends the command using the provided socket.
         """
 
-        data = json.dumps({'type': self.type, 'creator': self.creator, 'specificChatroom': self.specificChatroom, 'body': self.body})
+        data = json.dumps({'type': self.type, 'creator': self.creator, 'specificChatroom': self.specificChatroom, 'body': self.body, 'suppress': self.suppress})
         length = len(data)
         sock.sendall(struct.pack('!I', length))
         sock.sendall(data.encode(encoding='UTF-8'))
@@ -133,4 +135,4 @@ class Command:
         returns the json representation of the command.
         """
 
-        return json.dumps({'type': self.type, 'creator': self.creator, 'specificChatroom': self.specificChatroom, 'body': self.body})
+        return json.dumps({'type': self.type, 'creator': self.creator, 'specificChatroom': self.specificChatroom, 'body': self.body, 'suppress': self.suppress})

@@ -168,16 +168,9 @@ class ClientGUI(tk.Frame):
         # Disable the chatroom button clicked on
         btn_chatroom.configure(state=tk.DISABLED, bg='LightSkyBlue1')
 
-        # Remove list of current users
-        self.lst_box_users.delete(0, 'end')
-
         # Send join command
         join_cmd = '/join {}'.format(btn_chatroom['text'])
         self.send_to_client(join_cmd)
-
-        # Send list user command
-        ls_cmd = '/list_users {}'.format(btn_chatroom['text'])
-        self.send_to_client(ls_cmd)
 
     def btn_create_chatroom_click(self):
         """
@@ -287,7 +280,8 @@ class ClientGUI(tk.Frame):
         self.update()
 
     def add_user(self, alias):
-        self.lst_box_users.insert('end', alias)
+        if not self.index_of_user(alias):
+            self.lst_box_users.insert('end', alias)
 
     def remove_user(self, alias):
         idx = self.index_of_user(alias)
@@ -297,6 +291,7 @@ class ClientGUI(tk.Frame):
         for idx, listAlias in enumerate(self.lst_box_users.get(0, 'end')):
             if listAlias == alias:
                 return idx
+        return None
 
     def insert_text(self, text):
         """
@@ -427,13 +422,25 @@ class ClientGUI(tk.Frame):
             if cmd.creator == self.alias:
                 self.chatroom = cmd.body
                 line = "You joined chatroom {}".format(cmd.body)
-            else:
-                line = "{} joined chatroom {}".format(cmd.creator, cmd.body)
 
-            if cmd.body == self.chatroom:
-                self.add_user(cmd.creator)
+                # Remove list of current users
+                self.lst_box_users.delete(0, 'end')
+
+                # Add ourselves
+                self.add_user(self.alias)
+
+                # Send list user command
+                ls_cmd = '/list_users {}'.format(cmd.body)
+                self.send_to_client(ls_cmd)
             else:
-                self.remove_user(cmd.creator)
+                # Only shows message if the server want us to display it
+                if not cmd.suppress:
+                    line = "{} joined chatroom {}".format(cmd.creator, cmd.body)
+
+                if cmd.body == self.chatroom:
+                    self.add_user(cmd.creator)
+                else:
+                    self.remove_user(cmd.creator)
 
         elif cmd.type == 'create_chatroom':
             line = "{} created chatroom {}".format(cmd.creator, cmd.body)
