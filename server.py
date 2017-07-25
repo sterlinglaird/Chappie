@@ -1,7 +1,8 @@
 from socket import *
 from threading import Thread
 import struct
-
+from queue import Queue
+from select import select
 # Custom Modules
 from command import Command
 from user import User
@@ -14,12 +15,22 @@ class Server:
         The class that contains server related functionality.
         """
 
-        self.listener = socket()
+        self.listener = socket(AF_INET, SOCK_STREAM)
+
+        # So sockets can be reused
+        self.listener.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+
+        # Keep socket from blocking
+        self.listener.setblocking(0)
+
         self.address = (gethostname(), 8585)
         self.tcp_backlog = 5
         self.users = {}
         self.userlist = []
         self.chatrooms = {"General": Chatroom("General", None, True)}
+
+        self.inputs = [self.listener] # Where we expect to read
+        self.outputs =[] # Where we expect to write
 
     def listen(self):
         """
@@ -31,8 +42,14 @@ class Server:
         self.listener.listen(self.tcp_backlog)
 
         # Accepts all new traffic and delegates a thread to be responsible for the new client
-        while True:
-            client_sock, origin_address = self.listener.accept()
+        while self.inputs:
+            readable, writable, errors = select(self.inputs, self.outputs, self.inputs)
+
+            for sock in readable:
+                if sock is self.listener:
+                    client_sock, origin_address = sock.accept()
+                    client_sock.setblocking(0)
+                    
             Thread(target=self.handle_client, args=(origin_address, client_sock)).start()
 
     def handle_client(self, origin_address: (str, int), client_sock: socket):
@@ -401,4 +418,4 @@ class Server:
 if __name__ == '__main__':
     server = Server()
     print("Starting Server")
-    server.listen()
+    Thread(target=server.listen).start()
