@@ -439,9 +439,10 @@ class ClientGUI(tk.Frame):
         cmd_name = lst_parsed_input[0] if len(lst_parsed_input) >= 1 else ''
         cmd_body = lst_parsed_input[1] if len(lst_parsed_input) >= 2 else ''
 
-        if len(lst_parsed_input) == 1 and '/' not in lst_parsed_input[0]:
+        # Check if command is just a chat message
+        if '/' not in lst_parsed_input[0]:
             cmd_name = '/message'
-            cmd_body = lst_parsed_input[0]
+            cmd_body = ' '.join(lst_parsed_input)
 
         cmd = Command()
 
@@ -467,7 +468,9 @@ class ClientGUI(tk.Frame):
         elif cmd_name == '/unblock':
             cmd.init_unblock_user(cmd_body)
         else:
-            print("\"{}\" is not a valid command.".format(cmd_name))
+            line = "\"{}\" is not a valid command.".format(cmd_name)
+            print(line)
+            self.insert_text("{}\n".format(line))
             return
 
         self.client.stdin.write("{}\n".format(cmd.stringify()).encode())
