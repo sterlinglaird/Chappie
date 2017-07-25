@@ -210,7 +210,7 @@ class ClientGUI(tk.Frame):
         submit_btn.grid(row=2, column=0, sticky=tk.E, padx=10, pady=5)
 
         # Removes minimize and maximize buttons
-        window.attributes("-toolwindow", 1)
+        #window.attributes("-toolwindow", 1)
 
         # Removes the window manager bar entirely if we dont want to allow the window to close
         if not allow_close:
