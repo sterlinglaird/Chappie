@@ -264,10 +264,11 @@ class Server:
                                 blocked_user = blocked_user_location.users[cmd.body]
                                 
                                 # Check if the user is trying to block themselves (it should have been a feature, but sterlinglaird is lame)
-                                errorResponse = Command()
-                                errorResponse.init_error("Why are you trying to block yourself? Stop that.")
-                                errorResponse.send(sock)
-                                return
+                                if currUser == blocked_user:
+                                    errorResponse = Command()
+                                    errorResponse.init_error("Why are you trying to block yourself? Stop that.")
+                                    errorResponse.send(sock)
+                                    return
 
                                 # Block the user
                                 user_location.block_user(blocked_user)

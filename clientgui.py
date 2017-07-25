@@ -439,6 +439,10 @@ class ClientGUI(tk.Frame):
         cmd_name = lst_parsed_input[0] if len(lst_parsed_input) >= 1 else ''
         cmd_body = lst_parsed_input[1] if len(lst_parsed_input) >= 2 else ''
 
+        if len(lst_parsed_input) == 1 and '/' not in lst_parsed_input[0]:
+            cmd_name = '/message'
+            cmd_body = lst_parsed_input[0]
+
         cmd = Command()
 
         if cmd_name == '/message':
@@ -463,7 +467,6 @@ class ClientGUI(tk.Frame):
         elif cmd_name == '/unblock':
             cmd.init_unblock_user(cmd_body)
         else:
-            # assume it's a message (check 200 character max)
             print("\"{}\" is not a valid command.".format(cmd_name))
             return
 
@@ -503,7 +506,7 @@ class ClientGUI(tk.Frame):
                 ls_cmd = '/list_users {}'.format(util.defaultChatroom)
                 self.send_to_client(ls_cmd)
             else:
-                line = "'{}' joins Chat. ".format(cmd.creator)
+                line = "'{}' joined Chat. ".format(cmd.creator)
 
             self.add_user(cmd.creator)
 
