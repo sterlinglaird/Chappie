@@ -32,6 +32,9 @@ class ClientGUI(tk.Frame):
         # User List
         self.initialize_users()
 
+        # Alias Popup
+        self.alias_popup_wnd()
+
     def initialize_window(self):
         """
         Initialize the window of the chat application.
@@ -171,7 +174,7 @@ class ClientGUI(tk.Frame):
         prev_btn_chatroom.configure(state=tk.ACTIVE, bg='white')
         next_btn_chatroom.configure(state=tk.DISABLED, bg='LightSkyBlue1')
 
-    def create_window(self, title: str, text: str, submit_action, return_action):
+    def create_window(self, title: str, text: str, submit_action, return_action, allow_close=True):
         """
         Creates popup window
         """
@@ -206,6 +209,22 @@ class ClientGUI(tk.Frame):
                                               font=self.default_font, relief=tk.FLAT)
         submit_btn.grid(row=2, column=0, sticky=tk.E, padx=10, pady=5)
 
+        # Removes minimize and maximize buttons
+        window.attributes("-toolwindow", 1)
+
+        # Removes the window manager bar entirely if we dont want to allow the window to close
+        if not allow_close:
+            window.wm_overrideredirect(True)
+
+        # Keep window on the top
+        window.attributes('-topmost', True)
+
+        # Force focus to be this window
+        window.grab_set()
+
+        # Start with text focused
+        text_entry.focus_force()
+
     def btn_create_chatroom_click(self):
         """
         Creates a window for the create chat room command.
@@ -225,6 +244,27 @@ class ClientGUI(tk.Frame):
 
         # Send create command
         cmd = '/create {}'.format(chatroom_name)
+        self.send_to_client(cmd)
+
+        # Close the create chat room window
+        window.destroy()
+
+    def alias_popup_wnd(self):
+        self.create_window("Set Username", "Please enter a username", self.btn_alias_confirm_click, self.txt_alias_return, allow_close=False)
+
+    def btn_alias_confirm_click(self, alias, window):
+        """
+        Confirms chat room creation and closes the window.
+        """
+
+        # Check that the chatroom name is valid
+        alias = alias.replace(" ", "_")
+        if len(alias) < 3 or len(alias) > 16:
+            print("too short or long")
+            return
+
+        # Send create command
+        cmd = '/set_alias {}'.format(alias)
         self.send_to_client(cmd)
 
         # Close the create chat room window
@@ -346,6 +386,13 @@ class ClientGUI(tk.Frame):
         self.txt_messages.configure(state=tk.NORMAL)
         self.txt_messages.insert('end', text)
         self.txt_messages.configure(state=tk.DISABLED)
+        
+    def txt_alias_return(self, alias, window):
+        """
+        Handles event of a return being entered to the message box.
+        """
+        self.btn_alias_confirm_click(alias, window)
+        return 'break'  # Stops the <Return> event from updating the text box with a newline
 
     def txt_chatroom_name_return(self, chatroom_name, window):
         """
