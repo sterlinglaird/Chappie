@@ -245,7 +245,7 @@ class Server:
                     # Check if they are the owner of the room they're in
                     if user_location.owner is not currUser:
                         errorResponse = Command()
-                        errorResponse.init_error("You are not the owner of chatroom {}, so you cannot block users from joining it.".format(user_location.name))
+                        errorResponse.init_error("You don't own chatroom {}, so you can't block users from joining it.".format(user_location.name))
                         errorResponse.send(sock)
                         return
                     # If they are the owner
@@ -255,6 +255,13 @@ class Server:
                             if cmd.body in self.chatrooms[chatroom].users:
                                 blocked_user_location = self.chatrooms[chatroom]
                                 blocked_user = blocked_user_location.users[cmd.body]
+                                
+                                # Check if the user is trying to block themselves (it should have been a feature, but sterlinglaird is lame)
+                                errorResponse = Command()
+                                errorResponse.init_error("Why are you trying to block yourself? Stop that.")
+                                errorResponse.send(sock)
+                                return
+
                                 # Block the user
                                 user_location.block_user(blocked_user)
                                 
@@ -273,7 +280,7 @@ class Server:
                                     user_location.rem_user(blocked_user)
                                     self.chatrooms[util.defaultChatroom].add_user(blocked_user)
                                 else:
-                                    # Let the blocked user's room know about the block
+                                    # Let the blocked user's room know about the block (console logging only)
                                     blocked_user_location.send_all(cmd)
 
                                 # Let user know they've been forced into default chatroom
