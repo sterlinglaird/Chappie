@@ -160,17 +160,16 @@ class ClientGUI(tk.Frame):
         Joins the chat room clicked on.
         """
 
-        # Make the previous chatroom button active again
-        prev_btn_chatroom = next((btn for btn in self.lst_btn_chatrooms if btn['state'] == 'disabled'), None)
-        if prev_btn_chatroom != None:
-            prev_btn_chatroom.config(state=tk.ACTIVE, bg='white')
-
-        # Disable the chatroom button clicked on
-        btn_chatroom.configure(state=tk.DISABLED, bg='LightSkyBlue1')
-
         # Send join command
         join_cmd = '/join {}'.format(btn_chatroom['text'])
         self.send_to_client(join_cmd)
+
+    def btn_set_active(self, chatroom: str):
+        next_btn_chatroom = next((btn for btn in self.lst_btn_chatrooms if btn['text'] == chatroom), None)
+        prev_btn_chatroom = next((btn for btn in self.lst_btn_chatrooms if btn['state'] == 'disabled'), None)
+
+        prev_btn_chatroom.configure(state=tk.ACTIVE, bg='white')
+        next_btn_chatroom.configure(state=tk.DISABLED, bg='LightSkyBlue1')
 
     def btn_create_chatroom_click(self):
         """
@@ -423,6 +422,9 @@ class ClientGUI(tk.Frame):
                 self.chatroom = cmd.body
                 line = "You joined chatroom {}".format(cmd.body)
 
+                # Set the new chatroom to be active
+                self.btn_set_active(cmd.body)
+
                 # Remove list of current users
                 self.lst_box_users.delete(0, 'end')
 
@@ -432,9 +434,10 @@ class ClientGUI(tk.Frame):
                 # Send list user command
                 ls_cmd = '/list_users {}'.format(cmd.body)
                 self.send_to_client(ls_cmd)
+
             else:
-                # Only shows message if the server want us to display it
-                if not cmd.suppress:
+                # Only shows message if the server want us to display it and if the intended recipient is this chatroom
+                if not cmd.suppress and cmd.body == self.chatroom:
                     line = "{} joined chatroom {}".format(cmd.creator, cmd.body)
 
                 if cmd.body == self.chatroom:
