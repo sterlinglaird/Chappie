@@ -74,6 +74,13 @@ class Server:
                 errorResponse.send(sock)
                 return
 
+            # Notifies user if their message is too long
+            if len(cmd.body) > 200:
+                errorResponse = Command()
+                errorResponse.init_error("Your message exceeds the 200 character limit.")
+                errorResponse.send(sock)
+                return
+
             print('{}/{}: {}'.format(cmd.creator, cmd.specificChatroom, cmd.body))
 
             # Relays the message to all the other clients in the same chatroom that the message was sent from
