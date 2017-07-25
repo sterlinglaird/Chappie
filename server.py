@@ -276,6 +276,12 @@ class Server:
                                     # Let the blocked user's room know about the block
                                     blocked_user_location.send_all(cmd)
 
+                                # Let user know they've been forced into default chatroom
+                                join_cmd = Command()
+                                join_cmd.init_join_chatroom(util.defaultChatroom)
+                                join_cmd.creator = blocked_user.alias
+                                join_cmd.send(blocked_user.socket)
+
                                 print("{} blocked {} from chatroom {}".format(currUser.alias, cmd.body, user_location.name))
 
                                 return

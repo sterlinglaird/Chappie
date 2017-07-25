@@ -15,7 +15,7 @@ class Chatroom:
     def rem_user(self, user: User):
         self.users.pop(user.alias, None)
 
-    def  block_user(self, user: User):
+    def block_user(self, user: User):
         self.blocked[user.alias] = user
 
     def unblock_user(self, user: User):

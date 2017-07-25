@@ -171,48 +171,54 @@ class ClientGUI(tk.Frame):
         prev_btn_chatroom.configure(state=tk.ACTIVE, bg='white')
         next_btn_chatroom.configure(state=tk.DISABLED, bg='LightSkyBlue1')
 
-    def btn_create_chatroom_click(self):
+    def create_window(self, title: str, text: str, submit_action, return_action):
         """
-        Creates a window for the create chat room command.
+        Creates popup window
         """
 
-        self.wnd_create_chatroom = tk.Toplevel(self.master)
-        self.wnd_create_chatroom.wm_title("Create Chat Room")
-        self.wnd_create_chatroom.configure(bg="gray20")
-        self.wnd_create_chatroom.resizable(0,0)
+        window = tk.Toplevel(self.master)
+        window.wm_title(title)
+        window.configure(bg="gray20")
+        window.resizable(0, 0)
 
         # Set size of window and central start location
         w = 300
         h = 125
         sw = self.master.winfo_screenwidth()
         sh = self.master.winfo_screenheight()
-        x = (sw/2) - (w/2)
-        y = (sh/2) - (h/2)
-        self.wnd_create_chatroom.geometry('%dx%d+%d+%d' % (w, h, x, y))
+        x = (sw / 2) - (w / 2)
+        y = (sh / 2) - (h / 2)
+        window.geometry('%dx%d+%d+%d' % (w, h, x, y))
 
         # Label for the create chat room window
-        self.lbl_create_chatroom = tk.Label(self.wnd_create_chatroom, text="Create Chat Room", font=self.header_font)
-        self.lbl_create_chatroom.grid(row=0, column=0, padx=10, pady=5)
-        self.lbl_create_chatroom.configure(bg="gray20", fg="white")
+        label = tk.Label(window, text=text, font=self.header_font)
+        label.grid(row=0, column=0, padx=10, pady=5)
+        label.configure(bg="gray20", fg="white")
 
         # Text for the chat room name
-        self.txt_chatroom_name = tk.Text(self.wnd_create_chatroom, height=1, width=35, font=self.default_font)
-        self.txt_chatroom_name.grid(row=1, column=0, padx=10, pady=5)
-        self.txt_chatroom_name.bind('<Return>', self.txt_chatroom_name_return)
+        text_entry = tk.Text(window, height=1, width=35, font=self.default_font)
+        text_entry.grid(row=1, column=0, padx=10, pady=5)
+        text_entry.bind('<Return>', lambda event: return_action(text_entry.get('1.0', '1.end'), window))
 
         # Button to confirm chat room name
-        self.btn_confirm_creation = tk.Button(self.wnd_create_chatroom, text="Confirm",
-                                              command=self.btn_confirm_creation_click,
+        submit_btn = tk.Button(window, text="Confirm",
+                                              command=lambda: submit_action(text_entry.get('1.0', '1.end'), window),
                                               font=self.default_font, relief=tk.FLAT)
-        self.btn_confirm_creation.grid(row=2, column=0, sticky=tk.E, padx=10, pady=5)
+        submit_btn.grid(row=2, column=0, sticky=tk.E, padx=10, pady=5)
 
-    def btn_confirm_creation_click(self):
+    def btn_create_chatroom_click(self):
+        """
+        Creates a window for the create chat room command.
+        """
+
+        self.create_window("Create Chat Room", "Create Chat Room", self.btn_confirm_creation_click, self.txt_chatroom_name_return)
+
+    def btn_confirm_creation_click(self, chatroom_name, window):
         """
         Confirms chat room creation and closes the window.
         """
 
         # Check that the chatroom name is valid
-        chatroom_name = self.txt_chatroom_name.get('1.0', '1.end')
         chatroom_name = chatroom_name.replace(" ", "_")
         if len(chatroom_name) == 0 or len(chatroom_name) > 16:
             return
@@ -222,7 +228,7 @@ class ClientGUI(tk.Frame):
         self.send_to_client(cmd)
 
         # Close the create chat room window
-        self.wnd_create_chatroom.destroy()
+        window.destroy()
 
     def create_chatroom_btn(self, chatroom_name):
         """
@@ -237,6 +243,39 @@ class ClientGUI(tk.Frame):
                                  height=1, width=20, font=self.default_font,
                                  pady=2, relief=tk.FLAT, bg='white')
         btn_chatroom.configure(command=lambda b=btn_chatroom: self.btn_chatroom_click(b))
+
+        def block(alias, window):
+            cmd = '/block {}'.format(alias)
+            self.send_to_client(cmd)
+            window.destroy()
+
+        def unblock(alias, window):
+            cmd = '/unblock {}'.format(alias)
+            self.send_to_client(cmd)
+            window.destroy()
+
+        def block_return(alias, window):
+            block(alias, window)
+            return 'break'  # Stops the <Return> event from updating the text box with a newline
+
+        def unblock_return(alias, window):
+            unblock(alias, window)
+            return 'break'  # Stops the <Return> event from updating the text box with a newline
+
+        def open_block_window():
+            self.create_window("Block User", "Block User", block, block_return)
+
+        def open_unblock_window():
+            self.create_window("Unblock User", "Unblock User", unblock, unblock_return)
+
+        context_menu = tk.Menu(tearoff=0)
+        context_menu.add_command(label="Block", command=open_block_window)
+        context_menu.add_command(label="Unblock", command=open_unblock_window)
+
+        def chatroom_btn_right_click(event):
+            context_menu.post(event.x_root, event.y_root)
+
+        btn_chatroom.bind("<Button-3>", chatroom_btn_right_click)
 
         # Add it to the list of buttons
         self.lst_btn_chatrooms.append(btn_chatroom)
@@ -292,6 +331,13 @@ class ClientGUI(tk.Frame):
                 return idx
         return None
 
+    def get_current_selected_user(self):
+        idx = self.lst_box_users.curselection()
+        if idx:
+            return self.lst_box_users.get(idx, idx)[0]  # Returns a tuple so we take the first one
+        else:
+            return None
+
     def insert_text(self, text):
         """
         Allows only the code to update the text message box.
@@ -301,12 +347,12 @@ class ClientGUI(tk.Frame):
         self.txt_messages.insert('end', text)
         self.txt_messages.configure(state=tk.DISABLED)
 
-    def txt_chatroom_name_return(self, event):
+    def txt_chatroom_name_return(self, chatroom_name, window):
         """
         Handles event of a return being entered to the message box.
         """
 
-        self.btn_confirm_creation_click()
+        self.btn_confirm_creation_click(chatroom_name, window)
         return 'break'  # Stops the <Return> event from updating the text box with a newline
 
     def txt_send_message_return(self, event):
