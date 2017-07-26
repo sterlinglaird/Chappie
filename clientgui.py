@@ -570,8 +570,6 @@ class ClientGUI(tk.Frame):
             #self.update()
 
         elif cmd.type == 'block_user':
-            self.remove_user(cmd.body)
-            
             if cmd.creator == self.alias:
                 line = "You blocked user {}".format(cmd.body)
             if cmd.body == self.alias:

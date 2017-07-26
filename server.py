@@ -300,7 +300,13 @@ class Server:
                                 join_cmd = Command()
                                 join_cmd.init_join_chatroom(util.defaultChatroom)
                                 join_cmd.creator = blocked_user.alias
-                                join_cmd.send(blocked_user.socket)
+
+                                # Let all users in new chatroom know that user has joined
+                                self.chatrooms[util.defaultChatroom].send_all(join_cmd)
+
+                                # Let all users in old chatroom know that user has left, as long as we havent already sent the message in the line above
+                                if blocked_user_location is not self.chatrooms[util.defaultChatroom]:
+                                    blocked_user_location.send_all(join_cmd)
 
                                 print("{} blocked {} from chatroom {}".format(currUser.alias, cmd.body, user_location.name))
 
