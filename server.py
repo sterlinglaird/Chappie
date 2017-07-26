@@ -3,6 +3,7 @@ from threading import Thread
 import struct
 from queue import Queue
 from select import select
+import time
 
 # Custom Modules
 from command import Command
@@ -33,6 +34,7 @@ class Server:
         self.inputs = [self.listener] # Where we expect to read
         self.outputs =[] # Where we expect to write
 
+        self.last_active[]
         self.queue = Queue()
 
     def listen(self):
@@ -46,15 +48,28 @@ class Server:
 
         while self.inputs:
             readable, writable, errors = select(self.inputs, self.outputs, self.inputs)
+            #print("xxx" + str(readable) + "xxx")
             for sock in readable:
                 if sock is self.listener:
                     client_sock, origin_address = sock.accept()
                     client_sock.setblocking(0)
-                    print("Accepted Connection")
+                    #print("Path A")
                     self.handle_client(origin_address, client_sock)
                     self.inputs.append(client_sock)
                 else:
-                    self.handle_client(("test", "quail"), sock)
+                    #print("Path B")
+                    self.handle_client(("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"), sock)
+
+            rem = 5
+            while rem > 0:
+                try:
+                    cmd, origin_address, client_sock = self.queue.get(block=False)
+                    self.execute_command(cmd, origin_address, client_sock)
+                except:
+                    pass
+
+                rem -= 1
+
     def handle_client(self, origin_address: (str, int), client_sock: socket):
         """
         Handles all commands sent from the client.
@@ -64,7 +79,7 @@ class Server:
             lengthbuf = client_sock.recv(4)
             length, = struct.unpack('!I', lengthbuf)
             data = client_sock.recv(length)
-        except: # Should specify the actual exception that is occuring
+        except: # Should specify the actual exception that is occurring
             return
 
         if data:
@@ -78,7 +93,6 @@ class Server:
     def handle_command(self):
         while True:
             cmd, origin_address, client_sock = self.queue.get(block=True)
-            print("Handling Command")
             self.execute_command(cmd, origin_address, client_sock)
 
     def execute_command(self, cmd: Command, origin_address: (str, int), sock: socket):
@@ -427,4 +441,4 @@ if __name__ == '__main__':
     server = Server()
     print("Starting Server")
     Thread(target=server.listen).start()
-    Thread(target=server.handle_command()).start()
+    #Thread(target=server.handle_command()).start()

@@ -125,10 +125,10 @@ class Command:
         Sends the command using the provided socket.
         """
 
-        data = json.dumps({'type': self.type, 'creator': self.creator, 'specificChatroom': self.specificChatroom, 'body': self.body, 'suppress': self.suppress})
-        length = len(data)
-        sock.sendall(struct.pack('!I', length))
-        sock.sendall(data.encode(encoding='UTF-8'))
+        data = json.dumps({'type': self.type, 'creator': self.creator, 'specificChatroom': self.specificChatroom, 'body': self.body, 'suppress': self.suppress}).encode(encoding='UTF-8')
+        length = struct.pack('!I', len(data))
+        data = length + data
+        sock.sendall(data)
 
     def stringify(self):
         """

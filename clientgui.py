@@ -139,6 +139,10 @@ class ClientGUI(tk.Frame):
                                           font=self.default_font, relief=tk.FLAT, bg='white')
         self.btn_send_message.grid(row=1, column=1, sticky=tk.W, pady=3, padx=2)
 
+        scrollbar = tk.Scrollbar(self.frm_messages, command=self.txt_messages.yview)
+        scrollbar.grid(row=0, column=1, sticky='nsew')
+        self.txt_messages['yscrollcommand'] = scrollbar.set
+
     def initialize_users(self):
         """
         Initialize the layout of the user list.
