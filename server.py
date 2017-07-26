@@ -53,6 +53,7 @@ class Server:
                 self.execute_command(cmd, origin_address, client_sock)
 
         print("{} lost connection".format(self.users[client_sock].alias))
+        self.userlist.remove(self.users[client_sock].alias)
         self.users.pop(client_sock, None)
         client_sock.close()
 
@@ -74,12 +75,23 @@ class Server:
                 errorResponse.send(sock)
                 return
 
+            # Notifies user if their message is too long
+            if len(cmd.body) > 200:
+                errorResponse = Command()
+                errorResponse.init_error("Your message exceeds the 200 character limit.")
+                errorResponse.send(sock)
+                return
+
             print('{}/{}: {}'.format(cmd.creator, cmd.specificChatroom, cmd.body))
 
             # Relays the message to all the other clients in the same chatroom that the message was sent from
             self.chatrooms[cmd.specificChatroom].send_all(cmd)
 
         elif cmd.type == 'alias':
+            # Some thoughts about https://github.com/sterlinglaird/SENG-299/issues/53: 
+                # to remove old user in user list, we'd have to search by sock (because that is unique to user, even if alias changes)
+                # also have to edit cliengui.py, as every time set_alias is executed, a new user is added to GUI user list
+
             # Get the chosen alias and address
             alias = cmd.body
 
@@ -245,7 +257,7 @@ class Server:
                     # Check if they are the owner of the room they're in
                     if user_location.owner is not currUser:
                         errorResponse = Command()
-                        errorResponse.init_error("You are not the owner of chatroom {}, so you cannot block users from joining it.".format(user_location.name))
+                        errorResponse.init_error("You don't own chatroom {}, so you can't block users from joining it.".format(user_location.name))
                         errorResponse.send(sock)
                         return
                     # If they are the owner
@@ -255,6 +267,14 @@ class Server:
                             if cmd.body in self.chatrooms[chatroom].users:
                                 blocked_user_location = self.chatrooms[chatroom]
                                 blocked_user = blocked_user_location.users[cmd.body]
+                                
+                                # Check if the user is trying to block themselves (it should have been a feature, but sterlinglaird is lame)
+                                if currUser == blocked_user:
+                                    errorResponse = Command()
+                                    errorResponse.init_error("Why are you trying to block yourself? Stop that.")
+                                    errorResponse.send(sock)
+                                    return
+
                                 # Block the user
                                 user_location.block_user(blocked_user)
                                 
@@ -273,14 +293,20 @@ class Server:
                                     user_location.rem_user(blocked_user)
                                     self.chatrooms[util.defaultChatroom].add_user(blocked_user)
                                 else:
-                                    # Let the blocked user's room know about the block
+                                    # Let the blocked user's room know about the block (console logging only)
                                     blocked_user_location.send_all(cmd)
 
                                 # Let user know they've been forced into default chatroom
                                 join_cmd = Command()
                                 join_cmd.init_join_chatroom(util.defaultChatroom)
                                 join_cmd.creator = blocked_user.alias
-                                join_cmd.send(blocked_user.socket)
+
+                                # Let all users in new chatroom know that user has joined
+                                self.chatrooms[util.defaultChatroom].send_all(join_cmd)
+
+                                # Let all users in old chatroom know that user has left, as long as we havent already sent the message in the line above
+                                if blocked_user_location is not self.chatrooms[util.defaultChatroom]:
+                                    blocked_user_location.send_all(join_cmd)
 
                                 print("{} blocked {} from chatroom {}".format(currUser.alias, cmd.body, user_location.name))
 
@@ -381,6 +407,7 @@ class Server:
                 cmd.send(user_socket)
             except:
                 print("{} lost connection".format(self.users[user_socket].alias))
+                self.userlist.remove(self.users[user_socket].alias)
                 self.users.pop(user_socket, None)
 
 if __name__ == '__main__':
