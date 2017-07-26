@@ -3,6 +3,7 @@ from threading import Thread
 import struct
 from queue import Queue
 from select import select
+
 # Custom Modules
 from command import Command
 from user import User
@@ -32,6 +33,8 @@ class Server:
         self.inputs = [self.listener] # Where we expect to read
         self.outputs =[] # Where we expect to write
 
+        self.queue = Queue()
+
     def listen(self):
         """
         Listens for all new traffic and delegates a separate thread for each client.
@@ -41,37 +44,41 @@ class Server:
         self.listener.bind(self.address)
         self.listener.listen(self.tcp_backlog)
 
-        # Accepts all new traffic and delegates a thread to be responsible for the new client
         while self.inputs:
             readable, writable, errors = select(self.inputs, self.outputs, self.inputs)
-
             for sock in readable:
                 if sock is self.listener:
                     client_sock, origin_address = sock.accept()
-                    client_sock.setblocking(0)
-                    
-            Thread(target=self.handle_client, args=(origin_address, client_sock)).start()
-
+                    #client_sock.setblocking(0)
+                    print("Accepted Connection")
+                    self.handle_client(origin_address, client_sock)
+                    self.inputs.append(client_sock)
+                else:
+                    self.handle_client(("test", "quail"), sock)
     def handle_client(self, origin_address: (str, int), client_sock: socket):
         """
         Handles all commands sent from the client.
         """
 
-        while True:
+        try:
+            lengthbuf = client_sock.recv(4)
+            length, = struct.unpack('!I', lengthbuf)
+            data = client_sock.recv(length)
+        except: # Should specify the actual exception that is occuring
+            return
+
+        if data:
             try:
-                lengthbuf = client_sock.recv(4)
-                length, = struct.unpack('!I', lengthbuf)
-                data = client_sock.recv(length)
-            except: # Should specify the actual exception that is occuring
-                break
-
-            if data is not None:
                 cmd = Command(data)
-                self.execute_command(cmd, origin_address, client_sock)
+            except:
+                print("error: " + data.decode())
+            self.queue.put((cmd, origin_address, client_sock))
 
-        print("{} lost connection".format(self.users[client_sock].alias))
-        self.users.pop(client_sock, None)
-        client_sock.close()
+    def handle_command(self):
+        while True:
+            cmd, origin_address, client_sock = self.queue.get(block=True)
+            print("Handling Command")
+            self.execute_command(cmd, origin_address, client_sock)
 
     def execute_command(self, cmd: Command, origin_address: (str, int), sock: socket):
         """
@@ -419,3 +426,4 @@ if __name__ == '__main__':
     server = Server()
     print("Starting Server")
     Thread(target=server.listen).start()
+    Thread(target=server.handle_command()).start()
