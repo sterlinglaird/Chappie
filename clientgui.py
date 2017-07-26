@@ -247,7 +247,11 @@ class ClientGUI(tk.Frame):
 
         # Check that the chatroom name is valid
         chatroom_name = chatroom_name.replace(" ", "_")
-        if len(chatroom_name) == 0 or len(chatroom_name) > 16:
+        if len(chatroom_name) == 0:
+            self.insert_text("Error: Chatroom names cannot be empty.\n")
+            return
+        if len(chatroom_name) > 16:
+            self.insert_text("Error: Chatroom names cannot be longer than 16 characters.\n")
             return
 
         # Send create command
