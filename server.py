@@ -25,7 +25,7 @@ class Server:
         self.listener.setblocking(0)
 
         self.address = (gethostname(), 8585)
-        self.tcp_backlog = 5
+        self.tcp_backlog = 500
         self.users = {}
         self.userlist = []
         self.chatrooms = {"General": Chatroom("General", None, True)}
@@ -33,7 +33,7 @@ class Server:
         self.inputs = [self.listener] # Where we expect to read
         self.outputs =[] # Where we expect to write
 
-        self.queue = Queue()
+        self.queues = Queue()
 
     def listen(self):
         """
@@ -49,7 +49,7 @@ class Server:
             for sock in readable:
                 if sock is self.listener:
                     client_sock, origin_address = sock.accept()
-                    #client_sock.setblocking(0)
+                    client_sock.setblocking(0)
                     print("Accepted Connection")
                     self.handle_client(origin_address, client_sock)
                     self.inputs.append(client_sock)
@@ -72,6 +72,7 @@ class Server:
                 cmd = Command(data)
             except:
                 print("error: " + data.decode())
+
             self.queue.put((cmd, origin_address, client_sock))
 
     def handle_command(self):
