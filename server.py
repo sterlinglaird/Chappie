@@ -34,7 +34,6 @@ class Server:
         self.inputs = [self.listener] # Where we expect to read
         self.outputs =[] # Where we expect to write
 
-        self.last_active[]
         self.queue = Queue()
 
     def listen(self):
@@ -58,7 +57,7 @@ class Server:
                     self.inputs.append(client_sock)
                 else:
                     #print("Path B")
-                    self.handle_client(("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"), sock)
+                    self.handle_client(("test", "test"), sock)
 
             rem = 5
             while rem > 0:
