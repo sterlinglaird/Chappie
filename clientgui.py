@@ -6,6 +6,8 @@ from subprocess import Popen, PIPE
 from command import Command
 import util
 
+alias_count = 0
+
 class ClientGUI(tk.Frame):
     def __init__(self, client: Popen):
         """
@@ -139,6 +141,10 @@ class ClientGUI(tk.Frame):
                                           font=self.default_font, relief=tk.FLAT, bg='white')
         self.btn_send_message.grid(row=1, column=1, sticky=tk.W, pady=3, padx=2)
 
+        scrollbar = tk.Scrollbar(self.frm_messages, command=self.txt_messages.yview)
+        scrollbar.grid(row=0, column=1, sticky='nsew', pady=2, padx=(15, 0))
+        self.txt_messages['yscrollcommand'] = scrollbar.set
+
     def initialize_users(self):
         """
         Initialize the layout of the user list.
@@ -157,6 +163,10 @@ class ClientGUI(tk.Frame):
         # List of users
         self.lst_box_users = tk.Listbox(self.frm_users, bd=0)
         self.lst_box_users.grid(row=1, column=0)
+
+        scrollbar = tk.Scrollbar(self.frm_users, command=self.lst_box_users.yview)
+        scrollbar.grid(row=1, column=0, sticky='nse', pady=2, padx=(0, 0))
+        self.lst_box_users['yscrollcommand'] = scrollbar.set
 
     def btn_chatroom_click(self, btn_chatroom):
         """
@@ -210,7 +220,7 @@ class ClientGUI(tk.Frame):
         submit_btn.grid(row=2, column=0, sticky=tk.E, padx=10, pady=5)
 
         # Removes minimize and maximize buttons
-        window.attributes("-toolwindow", 1)
+        #window.attributes("-toolwindow", 1)
 
         # Removes the window manager bar entirely if we dont want to allow the window to close
         if not allow_close:
@@ -239,7 +249,11 @@ class ClientGUI(tk.Frame):
 
         # Check that the chatroom name is valid
         chatroom_name = chatroom_name.replace(" ", "_")
-        if len(chatroom_name) == 0 or len(chatroom_name) > 16:
+        if len(chatroom_name) == 0:
+            self.insert_text("Error: Chatroom names cannot be empty.\n")
+            return
+        if len(chatroom_name) > 16:
+            self.insert_text("Error: Chatroom names cannot be longer than 16 characters.\n")
             return
 
         # Send create command
@@ -259,8 +273,10 @@ class ClientGUI(tk.Frame):
 
         # Check that the chatroom name is valid
         alias = alias.replace(" ", "_")
-        if len(alias) < 3 or len(alias) > 16:
-            print("too short or long")
+        if len(alias) < 4 or len(alias) > 16:
+            line = "Alias must be 4 to 16 charaters"
+            print(line)
+            self.insert_text("{}\n".format(line))
             return
 
         # Send create command
@@ -433,19 +449,31 @@ class ClientGUI(tk.Frame):
         """
         Sends data back to the client process.
         """
+        global alias_count
 
         lst_parsed_input = body.split(' ', 1)
 
         cmd_name = lst_parsed_input[0] if len(lst_parsed_input) >= 1 else ''
         cmd_body = lst_parsed_input[1] if len(lst_parsed_input) >= 2 else ''
 
+        # Check if command is just a chat message
+        if '/' not in lst_parsed_input[0]:
+            cmd_name = '/message'
+            cmd_body = ' '.join(lst_parsed_input)
+
         cmd = Command()
 
         if cmd_name == '/message':
             cmd.init_send_message(cmd_body, self.chatroom)
         elif cmd_name == '/set_alias':
-            self.alias = cmd_body
-            cmd.init_set_alias(cmd_body)
+            if alias_count == 0:
+                self.alias = cmd_body
+                cmd.init_set_alias(cmd_body)
+            else:
+                line = "Alias is already set"
+                print(line)
+                self.insert_text("{}\n".format(line))
+                return
         elif cmd_name == '/quit':
             cmd.init_disconnect()
         elif cmd_name == '/join':
@@ -463,8 +491,9 @@ class ClientGUI(tk.Frame):
         elif cmd_name == '/unblock':
             cmd.init_unblock_user(cmd_body)
         else:
-            # assume it's a message (check 200 character max)
-            print("\"{}\" is not a valid command.".format(cmd_name))
+            line = "\"{}\" is not a valid command.".format(cmd_name)
+            print(line)
+            self.insert_text("{}\n".format(line))
             return
 
         self.client.stdin.write("{}\n".format(cmd.stringify()).encode())
@@ -486,24 +515,26 @@ class ClientGUI(tk.Frame):
             self.handle_command(cmd)
 
     def handle_command(self, cmd: Command):
+        global alias_count
         line = None
 
         if cmd.type == 'message':
             line = "{}: {}".format(cmd.creator, cmd.body)
 
         elif cmd.type == 'connect':
-            line = "Connection Successful!\nPlease enter an alias (/set_alias <alias>):"
+            line = "Connection Successful!\n"
 
         elif cmd.type == 'alias':
             if cmd.creator == self.alias:
                 self.chatroom = util.defaultChatroom
                 line = "Alias '{}' confirmed! ".format(cmd.creator)
+                alias_count = 1
 
                 # Send list user command
                 ls_cmd = '/list_users {}'.format(util.defaultChatroom)
                 self.send_to_client(ls_cmd)
             else:
-                line = "'{}' joins Chat. ".format(cmd.creator)
+                line = "'{}' joined Chat. ".format(cmd.creator)
 
             self.add_user(cmd.creator)
 
@@ -556,6 +587,8 @@ class ClientGUI(tk.Frame):
             #self.update()
 
         elif cmd.type == 'block_user':
+            self.remove_user(cmd.body)
+            
             if cmd.creator == self.alias:
                 line = "You blocked user {}".format(cmd.body)
             if cmd.body == self.alias:
