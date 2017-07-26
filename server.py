@@ -53,6 +53,7 @@ class Server:
                 self.execute_command(cmd, origin_address, client_sock)
 
         print("{} lost connection".format(self.users[client_sock].alias))
+        self.userlist.remove(self.users[client_sock].alias)
         self.users.pop(client_sock, None)
         client_sock.close()
 
@@ -400,6 +401,7 @@ class Server:
                 cmd.send(user_socket)
             except:
                 print("{} lost connection".format(self.users[user_socket].alias))
+                self.userlist.remove(self.users[user_socket].alias)
                 self.users.pop(user_socket, None)
 
 if __name__ == '__main__':
