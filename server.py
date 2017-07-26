@@ -87,6 +87,10 @@ class Server:
             self.chatrooms[cmd.specificChatroom].send_all(cmd)
 
         elif cmd.type == 'alias':
+            # Some thoughts about https://github.com/sterlinglaird/SENG-299/issues/53: 
+                # to remove old user in user list, we'd have to search by sock (because that is unique to user, even if alias changes)
+                # also have to edit cliengui.py, as every time set_alias is executed, a new user is added to GUI user list
+
             # Get the chosen alias and address
             alias = cmd.body
 
