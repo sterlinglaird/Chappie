@@ -273,8 +273,8 @@ class ClientGUI(tk.Frame):
 
         # Check that the chatroom name is valid
         alias = alias.replace(" ", "_")
-        if len(alias) < 4 or len(alias) > 16:
-            line = "Alias must be 4 to 16 charaters"
+        if len(alias) < 4 or len(alias) > 32:
+            line = "Alias must be 4 to 32 charaters"
             print(line)
             self.insert_text("{}\n".format(line))
             return
