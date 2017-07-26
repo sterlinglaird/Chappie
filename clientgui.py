@@ -139,6 +139,10 @@ class ClientGUI(tk.Frame):
                                           font=self.default_font, relief=tk.FLAT, bg='white')
         self.btn_send_message.grid(row=1, column=1, sticky=tk.W, pady=3, padx=2)
 
+        scrollbar = tk.Scrollbar(self.frm_messages, command=self.txt_messages.yview)
+        scrollbar.grid(row=0, column=1, sticky='nsew', pady=2, padx=(15, 0))
+        self.txt_messages['yscrollcommand'] = scrollbar.set
+
     def initialize_users(self):
         """
         Initialize the layout of the user list.
@@ -157,6 +161,10 @@ class ClientGUI(tk.Frame):
         # List of users
         self.lst_box_users = tk.Listbox(self.frm_users, bd=0)
         self.lst_box_users.grid(row=1, column=0)
+
+        scrollbar = tk.Scrollbar(self.frm_users, command=self.lst_box_users.yview)
+        scrollbar.grid(row=1, column=0, sticky='nse', pady=2, padx=(0, 0))
+        self.lst_box_users['yscrollcommand'] = scrollbar.set
 
     def btn_chatroom_click(self, btn_chatroom):
         """
