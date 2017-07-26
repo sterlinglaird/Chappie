@@ -33,7 +33,7 @@ class Server:
         self.inputs = [self.listener] # Where we expect to read
         self.outputs =[] # Where we expect to write
 
-        self.queues = Queue()
+        self.queue = Queue()
 
     def listen(self):
         """
